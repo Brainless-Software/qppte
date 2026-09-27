@@ -1,5 +1,5 @@
 from PySide6.QtCore import QRect, QRectF
-from PySide6.QtGui import QColorConstants, QFontMetrics, QPainter, QPaintEvent, QResizeEvent, Qt
+from PySide6.QtGui import QFontMetrics, QPainter, QPaintEvent, QResizeEvent, Qt
 from PySide6.QtWidgets import QWidget
 
 
@@ -15,7 +15,9 @@ class LineNumberPanel(QWidget):
         super().resizeEvent(event)
         cr = self.contentsRect()
         r: QRect = self.editor_parent.geometry()
-        r.setWidth(self.editor_parent._lineNumberPanelWidth + 13)
+        r.setWidth(
+            self.editor_parent._lineNumberPanelWidth + int(self.editor_parent.current_font_horizontal_advance * 1.5)
+        )
         r.setLeft(cr.left() + 1)
         r.setTop(cr.top() + 1)
         self.setGeometry(r)
@@ -23,7 +25,7 @@ class LineNumberPanel(QWidget):
     def paintEvent(self, event: QPaintEvent) -> None:
         super().paintEvent(event)
         painter = QPainter(self)
-        painter.fillRect(event.rect(), QColorConstants.White)
+        painter.fillRect(event.rect(), self.editor_parent.getBackgroundColor())
         block = self.editor_parent.firstVisibleBlock()
         block_number = block.blockNumber()
         bounding_rect_of_block: QRectF = self.editor_parent.blockBoundingGeometry(block)
@@ -36,7 +38,7 @@ class LineNumberPanel(QWidget):
         height = QFontMetrics(self.font()).height()
         while block.isValid() and (top <= event.rect().bottom()):
             if block.isVisible() and (bottom >= event.rect().top()):
-                painter.setPen(QColorConstants.LightGray)
+                painter.setPen(self.editor_parent.getLineNumberColor())
                 painter.drawText(
                     0,
                     int(top),

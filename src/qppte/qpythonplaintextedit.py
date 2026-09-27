@@ -1,5 +1,6 @@
 import re
 from collections import deque
+from collections.abc import Sequence
 from contextlib import suppress
 from functools import cache, reduce
 from threading import Lock
@@ -19,7 +20,7 @@ from PySide6.QtGui import (
     QTextFormat,
 )
 from PySide6.QtWidgets import QPlainTextEdit, QTextEdit, QWidget
-from tree_sitter import Language, Node, Parser, Point, Query, QueryCursor
+from tree_sitter import Language, Node, Parser, Query, QueryCursor
 
 from qppte.line_number_panel import LineNumberPanel
 from qppte.style import DEFAULT_STYLES, TextCharFormat
@@ -32,8 +33,16 @@ HIGHLIGHTER_QUERY = Query(
         (function_definition
           name: (identifier) @function_definition)
 
-        (function_definition (identifier) @special_function (#eq? @special_function "__init__"))
-        ("." (identifier) @special_function (#eq? @special_function "__init__"))
+        (function_definition (identifier) @special_function (#any-of? @special_function 
+                                                                        "__init__" "__new__" "__setattr__" 
+                                                                        "__delattr__" "__eq__" "__ne__" 
+                                                                        "__str__" "__hash__" "__format__" 
+                                                                        "__getattribute__" "__sizeof__" "__dir__" 
+                                                                        "__repr__"))
+        ("." (identifier) @special_function (#any-of? @special_function 
+                                                        "__init__" "__new__" "__setattr__" "__delattr__" "__eq__" 
+                                                        "__ne__" "__str__" "__hash__" "__format__" "__getattribute__" 
+                                                        "__sizeof__" "__dir__" "__repr__"))
 
         (type) @type
 
@@ -51,7 +60,7 @@ HIGHLIGHTER_QUERY = Query(
 
         ["def" "return" "if" "else" "class" "assert" "async" "await" "break" "continue" "del" "elif" 
          "else" "except" "finally" "for" "global" "lambda" "pass" "raise" "nonlocal" "return" "try" 
-         "while" "yield" "as" "with" "import" "from" "match" "case"] @keyword
+         "while" "yield" "as" "with" "import" "from" "match" "case" "in"] @keyword
 
         (true) @keyword
         (false) @keyword
@@ -169,7 +178,15 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         self.setAutoFillBackground(True)
         self.__highlightStyle = highlightStyle
         self.__highlightStyleDict = self.__styles[highlightStyle]
-        self.__setBackground()
+        self.__background_color = QColor(self.__highlightStyleDict["QPlainTextEdit_background_color"])
+        palette = self.palette()
+        palette.setColor(QPalette.ColorRole.Base, self.__background_color)
+        palette.setColor(
+            QPalette.ColorRole.Text, QColor(self.__highlightStyleDict["QPlainTextEdit_default_foreground_color"])
+        )
+        self.setPalette(palette)
+
+        self.__line_number_color = QColor(self.__highlightStyleDict["QPlainTextEdit_line_number_color"])
         self.__current_line_background_color = QColor(
             self.__highlightStyleDict["QPlainTextEdit_current_line_background_color"]
         )
@@ -181,6 +198,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         self.__redo_queue = deque[UndoOp](maxlen=200)
 
         self.setFont(font)
+        self.current_font_horizontal_advance = QFontMetrics(self.font()).horizontalAdvance("9")
 
         self.__lineNumberPanel = LineNumberPanel(self) if enableLineNumbers else None
         self.__lineNumberPanelConnections = self.__configure_line_numbers_panel() if enableLineNumbers else []
@@ -203,17 +221,24 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         self.__lineNumberPanel = None
         self.setViewportMargins(0, 0, 0, 0)
 
+    def getBackgroundColor(self) -> QColor:
+        return self.__background_color
+
+    def getLineNumberColor(self) -> QColor:
+        return self.__line_number_color
+
+    @override
     def resizeEvent(self, e: QtGui.QResizeEvent, /) -> None:
         super().resizeEvent(e)
         if self.__lineNumberPanel is not None:
             self.__lineNumberPanel.resizeEvent(e)
 
     def calc_line_number_panel_width(self) -> int:
-        return len(str(self.blockCount())) * QFontMetrics(self.font()).horizontalAdvance("9")
+        return len(str(self.blockCount())) * self.current_font_horizontal_advance
 
     def __signal_handler_block_count_changed(self, newBlockCount: int) -> None:
         self._lineNumberPanelWidth = self.calc_line_number_panel_width()
-        self.setViewportMargins(self._lineNumberPanelWidth + 20, 0, 0, 0)
+        self.setViewportMargins(self._lineNumberPanelWidth + self.current_font_horizontal_advance * 2, 0, 0, 0)
 
     def __signal_handler_update_request(self, rect: QtCore.QRect, dy: int) -> None:
         # Update the line number panel in response to an update in the editor
@@ -247,6 +272,11 @@ class QPythonPlainTextEdit(QPlainTextEdit):
     def recordStateForUndoOperation(self) -> None:
         """To be called when extending custom commands."""
         self.__undo_queue.append(UndoOp(self.toPlainText(), self.textCursor().position()))
+
+    @override
+    def setFont(self, font: QFont | str | Sequence[str]) -> None:
+        super().setFont(font)
+        self.current_font_horizontal_advance = QFontMetrics(self.font()).horizontalAdvance("9")
 
     @override
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -589,11 +619,6 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
         super().keyPressEvent(event)
 
-    def __setBackground(self):
-        palette = QPalette()
-        palette.setColor(QPalette.ColorRole.Base, self.__highlightStyleDict["QPlainTextEdit_background_color"])
-        self.setPalette(palette)
-
     def __highlight(self) -> None:
         if not self.__syntax_highlighting_enabled:
             return
@@ -602,9 +627,6 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
         text = self.toPlainText()
         lines = text.splitlines()
-
-        def get_offset(p: Point) -> int:
-            return sum([len(line) for line in lines[0 : p.row]]) + p.column + p.row
 
         input_text = text.encode()
         tree = PYTHON_PARSER.parse(input_text)
@@ -670,7 +692,16 @@ class QPythonPlainTextEdit(QPlainTextEdit):
             saved_position = self.textCursor().position()
             self.__highlightStyle = highlightStyle
             self.__highlightStyleDict = self.__styles[highlightStyle]
-            self.__setBackground()
+            self.__background_color = QColor(self.__highlightStyleDict["QPlainTextEdit_background_color"])
+            palette = self.palette()
+            palette.setColor(QPalette.ColorRole.Base, self.__background_color)
+            palette.setColor(
+                QPalette.ColorRole.Text,
+                QColor(self.__highlightStyleDict["QPlainTextEdit_default_foreground_color"]),
+            )
+            self.setPalette(palette)
+
+            self.__line_number_color = QColor(self.__highlightStyleDict["QPlainTextEdit_line_number_color"])
             self.__current_line_background_color = QColor(
                 self.__highlightStyleDict["QPlainTextEdit_current_line_background_color"]
             )

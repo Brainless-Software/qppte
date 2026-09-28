@@ -21,7 +21,7 @@ class TextCharFormat(QTextCharFormat):
 
 
 DEFAULT_STYLES: dict[str, dict[str, TextCharFormat | str]] = {
-    "default": {
+    "Light": {
         "function_definition": TextCharFormat(foreground_color="#00627A"),
         "special_function": TextCharFormat(foreground_color="#B200B2"),
         "keyword": TextCharFormat(foreground_color="#0033B3"),
@@ -31,6 +31,7 @@ DEFAULT_STYLES: dict[str, dict[str, TextCharFormat | str]] = {
         "number": TextCharFormat(foreground_color="#1750EB"),
         "function_call": TextCharFormat(),
         "string": TextCharFormat(foreground_color="#067D17"),
+        "docstring": TextCharFormat(foreground_color="#8C8C8C", italic=True),
         "self": TextCharFormat(foreground_color="#94558D"),
         "type": TextCharFormat(foreground_color="#660099"),
         "class_definition_name": TextCharFormat(weight=QFont.Weight.Bold),
@@ -39,7 +40,7 @@ DEFAULT_STYLES: dict[str, dict[str, TextCharFormat | str]] = {
         "QPlainTextEdit_line_number_color": "#999999",
         "QPlainTextEdit_current_line_background_color": "#f5f8fe",
     },
-    "light_bold": {
+    "Light [Bold]": {
         "function_definition": TextCharFormat(foreground_color="#00627A", weight=QFont.Weight.Bold),
         "special_function": TextCharFormat(foreground_color="#B200B2", weight=QFont.Weight.Bold),
         "keyword": TextCharFormat(foreground_color="#0033B3", weight=QFont.Weight.Bold),
@@ -49,6 +50,7 @@ DEFAULT_STYLES: dict[str, dict[str, TextCharFormat | str]] = {
         "number": TextCharFormat(foreground_color="#1750EB", weight=QFont.Weight.Bold),
         "function_call": TextCharFormat(weight=QFont.Weight.Bold),
         "string": TextCharFormat(foreground_color="#067D17", weight=QFont.Weight.Bold),
+        "docstring": TextCharFormat(foreground_color="#8C8C8C", weight=QFont.Weight.Bold, italic=True),
         "self": TextCharFormat(foreground_color="#94558D", weight=QFont.Weight.Bold),
         "type": TextCharFormat(foreground_color="#660099", weight=QFont.Weight.Bold),
         "class_definition_name": TextCharFormat(weight=QFont.Weight.Bold),
@@ -57,7 +59,7 @@ DEFAULT_STYLES: dict[str, dict[str, TextCharFormat | str]] = {
         "QPlainTextEdit_line_number_color": "#999999",
         "QPlainTextEdit_current_line_background_color": "#f5f8fe",
     },
-    "warm_neon": {
+    "Warm Neon": {
         "function_definition": TextCharFormat(foreground_color="#FFC66D"),
         "special_function": TextCharFormat(foreground_color="#83D6F1"),
         "keyword": TextCharFormat(foreground_color="#CC9900"),
@@ -67,6 +69,7 @@ DEFAULT_STYLES: dict[str, dict[str, TextCharFormat | str]] = {
         "number": TextCharFormat(foreground_color="#F971BB"),
         "function_call": TextCharFormat(foreground_color="#9BC28E"),
         "string": TextCharFormat(foreground_color="#00B580"),
+        "docstring": TextCharFormat(foreground_color="#D2C200", italic=True),
         "self": TextCharFormat(foreground_color="#94558D"),
         "type": TextCharFormat(foreground_color="#9BC28E"),
         "class_definition_name": TextCharFormat(foreground_color="#FFFFFF", weight=QFont.Weight.Bold),

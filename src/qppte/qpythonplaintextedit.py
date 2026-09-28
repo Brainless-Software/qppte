@@ -73,6 +73,10 @@ HIGHLIGHTER_QUERY = Query(
         ((identifier) @self (#eq? @self "self"))
 
         (comment) @line_comment
+        
+        (function_definition (block . (expression_statement (string) @docstring)))
+        (class_definition (block . (expression_statement (string) @docstring)))
+        (module . (expression_statement (string) @docstring))
     """,
 )
 
@@ -156,7 +160,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         self,
         parent: QWidget | None = None,
         *,
-        highlightStyle: str = "default",
+        highlightStyle: str = "Light",
         enableLineNumbers: bool = False,
         enableSyntaxHighlighting: bool = True,
         syntaxHighlightStyles: dict[str, dict[str, TextCharFormat | str]] | None = None,
@@ -710,8 +714,8 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
     def setHighlightStyle(self, highlightStyle: str) -> None:
         """
-        Sets new highlight style. This will trigger re-rendering of text.
-        Note that this is a NO-OP if syntax highlighting is disabled
+        Sets new highlight style. This will trigger re-rendering of text if new style is different from currently
+        selected. Note that this is a NO-OP if syntax highlighting is disabled
         """
         if self.__highlightStyle != highlightStyle:
             saved_position = self.textCursor().position()

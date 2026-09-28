@@ -28,7 +28,7 @@ class TextEditorWindow(QMainWindow):
         self.setWindowTitle("QPythonPlainTextEdit Demo")
         self.setGeometry(100, 100, 800, 600)
 
-        text_edit = QPythonPlainTextEdit(highlightStyle="warm_neon", enableLineNumbers=True)
+        text_edit = QPythonPlainTextEdit(highlightStyle="Warm Neon", enableLineNumbers=True)
 
         root_panel = QWidget()
         layout = QVBoxLayout()
@@ -90,7 +90,9 @@ class TextEditorWindow(QMainWindow):
 
         self.setCentralWidget(root_panel)
 
-        self.sample_text = """@property
+        self.sample_text = """\"\"\" Module docstring \"\"\"
+
+@property
 def foo() -> None:
     pass
     
@@ -102,6 +104,7 @@ for i in [1, 3, 5, 7, 11]:
     print(f"i -> {i}")
     
 class A:
+    \"\"\" Class A \"\"\"
     def __init__(self):
         self.x = 1 # initializing x to 1
     

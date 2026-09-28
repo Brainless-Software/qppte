@@ -178,7 +178,7 @@ class GotoLineDialog(QDialog):
                     c = text_edit.textCursor()
                     max_column_num = c.columnNumber()
                     if column_text is not None:
-                        column = int(column_text)
+                        column = int(column_text) - 1
                         c.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor)
                         c.movePosition(
                             QTextCursor.MoveOperation.NextCharacter,

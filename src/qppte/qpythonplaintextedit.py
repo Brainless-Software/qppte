@@ -137,6 +137,7 @@ class QPythonPlainTextEditInfoPanel(QWidget):
     def __init__(self, editor_parent: QPlainTextEdit, /):
         super().__init__()
         self.line_num_label = QLabel()
+        self.setContentsMargins(0, 0, 0, 0)
 
         def onCursorPositionChanged():
             c = editor_parent.textCursor()
@@ -260,18 +261,16 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         return self.__info_panel
 
     def calc_line_number_panel_width(self) -> int:
-        return len(str(self.blockCount())) * self.current_font_horizontal_advance
+        return (len(str(self.blockCount())) + 3) * self.current_font_horizontal_advance
 
     def __signal_handler_block_count_changed(self, newBlockCount: int) -> None:
         self._lineNumberPanelWidth = self.calc_line_number_panel_width()
-        self.setViewportMargins(self._lineNumberPanelWidth + self.current_font_horizontal_advance * 2, 0, 0, 0)
+        self.setViewportMargins(self._lineNumberPanelWidth, 0, 0, 0)
+        self.__lineNumberPanel.update()
 
     def __signal_handler_update_request(self, rect: QtCore.QRect, dy: int) -> None:
-        # Update the line number panel in response to an update in the editor
         if dy > 0:
             self.__lineNumberPanel.scroll(0, dy)
-        else:
-            self.__lineNumberPanel.update(0, rect.y(), self.__lineNumberPanel.width(), rect.height())
 
     def __signal_handler_cursor_position_changed(self) -> None:
         # Highlight the current line
@@ -285,8 +284,8 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
     def setTabWidth(self, tabWidthSpaces: int) -> None:
         """
-        Tabs are always transformed into spaces when typing. This functions sets into how many spaces it is
-        transformed. By default, a TAB is converted into 4 empty space characters.
+        Tabs are always transformed into spaces when typing. This functions defines into how many spaces it is
+        transformed. By default, TAB is converted into 4 empty space characters.
         """
         self.__tab_width_num_spaces = tabWidthSpaces
         self.__tab_spaces = " " * self.__tab_width_num_spaces

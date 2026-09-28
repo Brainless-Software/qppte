@@ -85,7 +85,8 @@ class TextEditorWindow(QMainWindow):
         layout.addWidget(tools_panel_1)
         layout.addWidget(tools_panel_2)
 
-        layout.addWidget(text_edit)
+        layout.addWidget(text_edit, stretch=1)
+        layout.addWidget(text_edit.getInfoPanel())
 
         self.setCentralWidget(root_panel)
 

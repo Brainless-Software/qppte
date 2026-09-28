@@ -19,7 +19,7 @@ from PySide6.QtGui import (
     QTextCursor,
     QTextFormat,
 )
-from PySide6.QtWidgets import QPlainTextEdit, QTextEdit, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPlainTextEdit, QTextEdit, QWidget
 from tree_sitter import Language, Node, Parser, Query, QueryCursor
 
 from qppte.line_number_panel import LineNumberPanel
@@ -133,6 +133,23 @@ DEFAULT_ACTION_TRIGGERS: dict[str, ActionTrigger] = {
 }
 
 
+class QPythonPlainTextEditInfoPanel(QWidget):
+    def __init__(self, editor_parent: QPlainTextEdit, /):
+        super().__init__()
+        self.line_num_label = QLabel()
+
+        def onCursorPositionChanged():
+            c = editor_parent.textCursor()
+            self.line_num_label.setText(f"{c.block().blockNumber() + 1}:{c.columnNumber() + 1}   ")
+
+        editor_parent.cursorPositionChanged.connect(onCursorPositionChanged)
+
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.line_num_label, alignment=Qt.AlignmentFlag.AlignRight)
+
+
 class QPythonPlainTextEdit(QPlainTextEdit):
     def __init__(
         self,
@@ -204,6 +221,8 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         self.__lineNumberPanelConnections = self.__configure_line_numbers_panel() if enableLineNumbers else []
         self._lineNumberPanelWidth = self.calc_line_number_panel_width()
 
+        self.__info_panel: QPythonPlainTextEditInfoPanel | None = None
+
     def __configure_line_numbers_panel(self) -> list[QtCore.QMetaObject.Connection]:
         c1 = self.blockCountChanged.connect(self.__signal_handler_block_count_changed)
         c2 = self.updateRequest.connect(self.__signal_handler_update_request)
@@ -232,6 +251,13 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         super().resizeEvent(e)
         if self.__lineNumberPanel is not None:
             self.__lineNumberPanel.resizeEvent(e)
+
+    def getInfoPanel(self) -> QWidget:
+        if self.__info_panel is None:
+            self.__info_panel = QPythonPlainTextEditInfoPanel(self)
+
+        assert self.__info_panel is not None
+        return self.__info_panel
 
     def calc_line_number_panel_width(self) -> int:
         return len(str(self.blockCount())) * self.current_font_horizontal_advance

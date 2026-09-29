@@ -1,13 +1,17 @@
 from PySide6.QtCore import QLine, QRect, QRectF
-from PySide6.QtGui import QColor, QFontMetrics, QPainter, QPaintEvent, QResizeEvent, Qt
+from PySide6.QtGui import QColor, QFontMetrics, QPainter, QPaintEvent, QResizeEvent, Qt, QBrush, QColorConstants
 from PySide6.QtWidgets import QWidget
 
 
 class LineNumberPanel(QWidget):
+    ___current_line_number: int = None
+    ___current_line_number_brush: QBrush = QBrush(QColorConstants.Red) ## TODO - config based?
+
     def __init__(self, editor_parent):
         super().__init__(editor_parent)
         self.editor_parent = editor_parent
         self.setContentsMargins(0, 0, 0, 0)
+        self.editor_parent.signalCursorMovedLine.connect(self.on_cursor_moved_line)
 
     def sizeHint(self):
         return self.editor_parent.sizeHint()
@@ -50,6 +54,12 @@ class LineNumberPanel(QWidget):
         height = QFontMetrics(self.font()).height()
         while block.isValid() and (top <= event_rect.bottom()):
             if block.isVisible() and (bottom >= event_rect.top()):
+                line_rect: QRectF = QRectF(0, top, self.width(),  height)
+                if block_number == self.___current_line_number:
+                    # painter.fillRect(line_rect, self.___current_line_number_brush)
+                    painter.fillRect(line_rect, self.editor_parent.getCurrentLineBackgroundColor()) #This messes up
+                else:
+                    painter.fillRect(line_rect, self.editor_parent.getBackgroundColor())
                 painter.drawText(
                     5,
                     int(top),
@@ -62,3 +72,7 @@ class LineNumberPanel(QWidget):
             top = bottom
             bottom = top + self.editor_parent.blockBoundingRect(block).height()
             block_number += 1
+
+    def on_cursor_moved_line(self, line_number: int):
+        self.___current_line_number = line_number
+        self.update()

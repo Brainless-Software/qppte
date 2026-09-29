@@ -22,8 +22,8 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPlainTextEdit, QTextEdit, QWidget
 from tree_sitter import Language, Node, Parser, Query, QueryCursor
 
-from qppte.line_number_panel import LineNumberPanel
-from qppte.style import DEFAULT_STYLES, TextCharFormat
+from line_number_panel import LineNumberPanel
+from style import DEFAULT_STYLES, TextCharFormat
 
 PY_LANGUAGE = Language(tree_sitter_python.language())
 PYTHON_PARSER = Parser(PY_LANGUAGE)
@@ -156,6 +156,10 @@ class QPythonPlainTextEditInfoPanel(QWidget):
 
 
 class QPythonPlainTextEdit(QPlainTextEdit):
+    # Emitted whenever the cursor enters a different line
+    # Currently handled by LineNumberPanel
+    signalCursorMovedLine = QtCore.Signal(int)          # the new line number (0‑based)
+
     def __init__(
         self,
         parent: QWidget | None = None,
@@ -245,6 +249,9 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         self.__lineNumberPanel = None
         self.setViewportMargins(0, 0, 0, 0)
 
+    def getCurrentLineBackgroundColor(self) -> QColor:
+        return self.__current_line_background_color
+
     def getBackgroundColor(self) -> QColor:
         return self.__background_color
 
@@ -285,6 +292,8 @@ class QPythonPlainTextEdit(QPlainTextEdit):
             selection.cursor = self.textCursor()
             selection.cursor.clearSelection()
             self.setExtraSelections([selection])
+            current_line = self.textCursor().blockNumber()
+            self.signalCursorMovedLine.emit(current_line)
 
     def setTabWidth(self, tabWidthSpaces: int) -> None:
         """

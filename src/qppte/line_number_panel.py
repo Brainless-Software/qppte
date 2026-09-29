@@ -5,7 +5,6 @@ from PySide6.QtWidgets import QWidget
 
 class LineNumberPanel(QWidget):
     ___current_line_number: int = None
-    ___current_line_number_brush: QBrush = QBrush(QColorConstants.Red) ## TODO - config based?
 
     def __init__(self, editor_parent):
         super().__init__(editor_parent)
@@ -56,7 +55,6 @@ class LineNumberPanel(QWidget):
             if block.isVisible() and (bottom >= event_rect.top()):
                 line_rect: QRectF = QRectF(0, top, self.width(),  height)
                 if block_number == self.___current_line_number:
-                    # painter.fillRect(line_rect, self.___current_line_number_brush)
                     painter.fillRect(line_rect, self.editor_parent.getCurrentLineBackgroundColor()) #This messes up
                 else:
                     painter.fillRect(line_rect, self.editor_parent.getBackgroundColor())

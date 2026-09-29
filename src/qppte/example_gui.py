@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 from PySide6 import QtCore
-from PySide6.QtGui import QFontDatabase, QKeyEvent, Qt
+from PySide6.QtGui import QAction, QFontDatabase, QKeyEvent, Qt
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -28,7 +28,11 @@ class TextEditorWindow(QMainWindow):
         self.setWindowTitle("QPythonPlainTextEdit Demo")
         self.setGeometry(100, 100, 800, 600)
 
-        text_edit = QPythonPlainTextEdit(highlightStyle="Warm Neon", enableLineNumbers=True)
+        text_edit = QPythonPlainTextEdit(highlightStyle="Light", enableLineNumbers=True)
+        search_action = QAction("Search", self)
+        search_action.setShortcut(text_edit.actionTriggers["search"].get_q_key_combintation())
+        search_action.triggered.connect(text_edit.startSearch)
+        self.addAction(search_action)
 
         root_panel = QWidget()
         layout = QVBoxLayout()

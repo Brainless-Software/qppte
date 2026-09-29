@@ -7,6 +7,7 @@ from threading import Lock
 from typing import Callable, NamedTuple, override
 
 import tree_sitter_python
+from line_number_panel import LineNumberPanel
 from PySide6 import QtCore, QtGui
 from PySide6.QtGui import (
     QColor,
@@ -20,10 +21,8 @@ from PySide6.QtGui import (
     QTextFormat,
 )
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QTextEdit, QVBoxLayout, QWidget
-from tree_sitter import Language, Node, Parser, Query, QueryCursor
-
-from line_number_panel import LineNumberPanel
 from style import DEFAULT_STYLES, TextCharFormat
+from tree_sitter import Language, Node, Parser, Query, QueryCursor
 
 PY_LANGUAGE = Language(tree_sitter_python.language())
 PYTHON_PARSER = Parser(PY_LANGUAGE)
@@ -86,7 +85,7 @@ LEADING_SPACE = re.compile(r"""^(\s*).*""")
 
 
 class ActionTrigger(NamedTuple):
-    keys: tuple[int]
+    key: int
     modifiers: tuple[int]
 
     @cache
@@ -94,10 +93,14 @@ class ActionTrigger(NamedTuple):
         return reduce(lambda acc, m: acc | m, self.modifiers, QtCore.Qt.KeyboardModifier.NoModifier)
 
     def match(self, event: QKeyEvent) -> bool:
-        if event.key() in self.keys and (self.modifiers == [] or self.get_modifiers() == event.modifiers()):
+        if event.key() == self.key and (self.modifiers == [] or self.get_modifiers() == event.modifiers()):
             return True
         else:
             return False
+
+    @cache
+    def get_q_key_combintation(self):
+        return QtCore.QKeyCombination(self.get_modifiers(), self.key)
 
 
 class UndoOp(NamedTuple):
@@ -106,35 +109,30 @@ class UndoOp(NamedTuple):
 
 
 DEFAULT_ACTION_TRIGGERS: dict[str, ActionTrigger] = {
-    "indent_block": ActionTrigger((Qt.Key.Key_Tab,), tuple()),
-    "clear_selection": ActionTrigger((Qt.Key.Key_Escape,), tuple()),
-    "backspace": ActionTrigger((Qt.Key.Key_Backspace,), tuple()),
-    "new_line": ActionTrigger(
-        (
-            Qt.Key.Key_Enter,
-            Qt.Key.Key_Return,
-        ),
-        tuple(),
-    ),
-    "undo": ActionTrigger((Qt.Key.Key_Z,), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-    "redo": ActionTrigger((Qt.Key.Key_R,), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-    "unindent": ActionTrigger((Qt.Key.Key_Backtab,), (QtCore.Qt.KeyboardModifier.ShiftModifier,)),
-    "delete_lines": ActionTrigger((Qt.Key.Key_Y,), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "indent_block": ActionTrigger(Qt.Key.Key_Tab, tuple()),
+    "clear_selection": ActionTrigger(Qt.Key.Key_Escape, tuple()),
+    "backspace": ActionTrigger(Qt.Key.Key_Backspace, tuple()),
+    "new_line_enter": ActionTrigger(Qt.Key.Key_Enter, tuple()),
+    "new_line_return": ActionTrigger(Qt.Key.Key_Return, tuple()),
+    "undo": ActionTrigger(Qt.Key.Key_Z, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "redo": ActionTrigger(Qt.Key.Key_R, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "unindent": ActionTrigger(Qt.Key.Key_Backtab, (QtCore.Qt.KeyboardModifier.ShiftModifier,)),
+    "delete_lines": ActionTrigger(Qt.Key.Key_Y, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
     "move_line_up": ActionTrigger(
-        (Qt.Key.Key_Up,), (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+        Qt.Key.Key_Up, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
     ),
     "move_line_down": ActionTrigger(
-        (Qt.Key.Key_Down,), (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+        Qt.Key.Key_Down, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
     ),
-    "duplicate_line": ActionTrigger((Qt.Key.Key_D,), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-    "toggle_comment_block": ActionTrigger((Qt.Key.Key_Slash,), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "duplicate_line": ActionTrigger(Qt.Key.Key_D, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "toggle_comment_block": ActionTrigger(Qt.Key.Key_Slash, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
     "increase_font_size": ActionTrigger(
-        (Qt.Key.Key_Plus,), (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+        Qt.Key.Key_Plus, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
     ),
     "decrease_font_size": ActionTrigger(
-        (Qt.Key.Key_Underscore,), (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+        Qt.Key.Key_Underscore, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
     ),
-    "search": ActionTrigger((Qt.Key.Key_F,), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "search": ActionTrigger(Qt.Key.Key_F, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
 }
 
 
@@ -337,7 +335,7 @@ class QPythonPlainTextEditInfoPanel(QWidget):
 class QPythonPlainTextEdit(QPlainTextEdit):
     # Emitted whenever the cursor enters a different line
     # Currently handled by LineNumberPanel
-    signalCursorMovedLine = QtCore.Signal(int)          # the new line number (0‑based)
+    signalCursorMovedLine = QtCore.Signal(int)  # the new line number (0‑based)
 
     def __init__(
         self,
@@ -678,7 +676,9 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                     super().keyPressEvent(event)
                 return
 
-            if self.actionTriggers["new_line"].match(event):
+            if self.actionTriggers["new_line_enter"].match(event) or self.actionTriggers["new_line_return"].match(
+                event
+            ):
                 # pressing Enter or Return
                 c = self.textCursor()
                 self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
@@ -815,9 +815,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                 return
 
             if self.actionTriggers["search"].match(event):
-                self.__info_panel.search_field_panel.resetSearchOffsets(self.textCursor().position())
-                self.__info_panel.search_field_panel.setVisible(True)
-                self.__info_panel.search_field_panel.search_field.setFocus()
+                self.startSearch()
                 return
 
             if self.actionTriggers["undo"].match(event):
@@ -911,6 +909,11 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         if not self.__signal_connected:
             self.textChanged.connect(self.__rehighlight)
             self.__signal_connected = True
+
+    def startSearch(self):
+        self.__info_panel.search_field_panel.resetSearchOffsets(self.textCursor().position())
+        self.__info_panel.search_field_panel.setVisible(True)
+        self.__info_panel.search_field_panel.search_field.setFocus()
 
     def setHighlightStyle(self, highlightStyle: str) -> None:
         """

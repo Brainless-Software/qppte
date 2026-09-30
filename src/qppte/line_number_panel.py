@@ -53,7 +53,8 @@ class LineNumberPanel(QWidget):
         height = QFontMetrics(self.font()).height()
         while block.isValid() and (top <= event_rect.bottom()):
             if block.isVisible() and (bottom >= event_rect.top()):
-                line_rect: QRectF = QRectF(0, top, self.width(),  height)
+                divider_line_offset = 2; ## To keep the vertical line between the this panel and editor area visible
+                line_rect: QRectF = QRectF(0, top, self.width()-divider_line_offset,  height)
                 if block_number == self.___current_line_number:
                     painter.fillRect(line_rect, self.editor_parent.getCurrentLineBackgroundColor()) #This messes up
                 else:

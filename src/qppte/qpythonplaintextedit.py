@@ -406,6 +406,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         self.__lineNumberPanel = LineNumberPanel(self) if enableLineNumbers else None
         self.__lineNumberPanelConnections = self.__configure_line_numbers_panel() if enableLineNumbers else []
         self._lineNumberPanelWidth = self.calc_line_number_panel_width()
+        self.__last_block_number = -1
 
         self.__info_panel: QPythonPlainTextEditInfoPanel | None = None
         self._lowerCaseCode = self.toPlainText().lower()
@@ -414,19 +415,18 @@ class QPythonPlainTextEdit(QPlainTextEdit):
             self._lowerCaseCode = self.toPlainText().lower()
 
         self.textChanged.connect(updateLowerCaseCode)
+        self.cursorPositionChanged.connect(self.__signal_handler_cursor_position_changed)
 
     def __configure_line_numbers_panel(self) -> list[QtCore.QMetaObject.Connection]:
         c1 = self.blockCountChanged.connect(self.__signal_handler_block_count_changed)
         c2 = self.updateRequest.connect(self.__signal_handler_update_request)
-        c3 = self.cursorPositionChanged.connect(self.__signal_handler_cursor_position_changed)
 
         self.__signal_handler_block_count_changed(0)
-        return [c1, c2, c3]
+        return [c1, c2]
 
     def __unconfigure_line_numbers_panel(self) -> None:
         self.blockCountChanged.disconnect(self.__lineNumberPanelConnections[0])
         self.updateRequest.disconnect(self.__lineNumberPanelConnections[1])
-        self.cursorPositionChanged.disconnect(self.__lineNumberPanelConnections[2])
         self.__lineNumberPanelConnections.clear()
         self.__lineNumberPanel.setParent(None)
         self.__lineNumberPanel = None
@@ -475,8 +475,12 @@ class QPythonPlainTextEdit(QPlainTextEdit):
             selection.cursor = self.textCursor()
             selection.cursor.clearSelection()
             self.setExtraSelections([selection])
-            current_line = self.textCursor().blockNumber()
-            self.signalCursorMovedLine.emit(current_line)
+
+            # repaint line highlight in number line column only if block number actually changed
+            self.__current_block_number = self.textCursor().blockNumber()
+            if self.__last_block_number != self.__current_block_number:
+                self.signalCursorMovedLine.emit(self.__current_block_number)
+                self.__last_block_number = self.__current_block_number
 
     def setTabWidth(self, tabWidthSpaces: int) -> None:
         """

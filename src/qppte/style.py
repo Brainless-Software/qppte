@@ -74,8 +74,8 @@ DEFAULT_STYLES: dict[str, dict[str, TextCharFormat | str]] = {
         "type": TextCharFormat(foreground_color="#9BC28E"),
         "class_definition_name": TextCharFormat(foreground_color="#FFFFFF", weight=QFont.Weight.Bold),
         "QPlainTextEdit_default_foreground_color": "#FFFFFF",
-        "QPlainTextEdit_background_color": "#282828",
-        "QPlainTextEdit_line_number_color": "#546D54",
+        "QPlainTextEdit_background_color": "#404040",
+        "QPlainTextEdit_line_number_color": "#849D84",
         "QPlainTextEdit_current_line_background_color": "#202020",
     },
 }

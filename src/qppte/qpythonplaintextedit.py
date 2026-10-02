@@ -7,7 +7,6 @@ from threading import Lock
 from typing import Callable, NamedTuple, override
 
 import tree_sitter_python
-from line_number_panel import LineNumberPanel
 from PySide6 import QtCore, QtGui
 from PySide6.QtGui import (
     QColor,
@@ -20,9 +19,11 @@ from PySide6.QtGui import (
     QTextCursor,
     QTextFormat,
 )
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QTextEdit, QVBoxLayout, QWidget
-from style import DEFAULT_STYLES, TextCharFormat
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QTextEdit, QWidget
 from tree_sitter import Language, Node, Parser, Query, QueryCursor
+
+from qppte.line_number_panel import LineNumberPanel
+from qppte.style import DEFAULT_STYLES, TextCharFormat
 
 PY_LANGUAGE = Language(tree_sitter_python.language())
 PYTHON_PARSER = Parser(PY_LANGUAGE)
@@ -335,14 +336,15 @@ class QPythonPlainTextEditInfoPanel(QWidget):
 class QPythonPlainTextEdit(QPlainTextEdit):
     # Emitted whenever the cursor enters a different line
     # Currently handled by LineNumberPanel
-    signalCursorMovedLine = QtCore.Signal(int)  # the new line number (0‑based)
+    # Note that the new line number (0‑based)
+    signalCursorMovedLine = QtCore.Signal(int)
 
     def __init__(
         self,
         parent: QWidget | None = None,
         *,
         highlightStyle: str = "Light",
-        enableLineNumbers: bool = False,
+        enableLineNumbers: bool = True,
         enableSyntaxHighlighting: bool = True,
         syntaxHighlightStyles: dict[str, dict[str, TextCharFormat | str]] | None = None,
         tabWidthSpaces: int = 4,
@@ -350,20 +352,21 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         font: QFont = QFont("Monospace"),
     ):
         """
-        QPythonPlainTextEdit constructor. Intended to be used for displaying or edit Python code in place
+        QPythonPlainTextEdit constructor. Intended to be used for displaying or editing Python code in place
         of QPLainTextEdit.
 
-        :param parent: QWidget parent class if any
-        :param highlightStyle: Name of a style to be picked by from `syntaxHighlightStyles`. Default is `default`.
-        :param enableLineNumbers: Indicates if we show line numbers in the editor or not. Default is `False`.
-        :param enableSyntaxHighlighting: Enable or disable syntax highlighting. Default is True.11
-        :param syntaxHighlightStyles: dict containing highlight rules for various highlight styles. If None (default),
-            then it is resolved to `qptte.style.DEFAULT_STYLES`.
-        :param tabWidthSpaces: When Tab key is pressed it is always converted into a number of space defined by this
-            argument. Default is 4 spaces.
-        :param actionTriggers: dictionary containing keystroke definitions for all custom actions used in this class.
-            If None (default), then `DEFAULT_ACTION_TRIGGERS` is used.
-        :param font: font to be used with this widget. Default is `QFont("Monospace")`.
+        Args:
+            parent: QWidget parent class if any
+            highlightStyle: Name of a style to be picked from `syntaxHighlightStyles` argument. Default is `Light`.
+            enableLineNumbers: Indicates if we show line numbers in the editor or not. Default is `True`.
+            enableSyntaxHighlighting: Enable or disable syntax highlighting. Default is True.
+            syntaxHighlightStyles: dict containing highlight rules for various highlight styles. If None (default),
+                then it is resolved to `qptte.style.DEFAULT_STYLES`.
+            tabWidthSpaces: When Tab key is pressed it is always converted into a number of space defined by this
+                argument. Default is 4 spaces.
+            actionTriggers: dictionary containing keystroke definitions for all custom actions used in this class.
+                If None (default), then `DEFAULT_ACTION_TRIGGERS` is used.
+            font: font to be used with this widget. Default is `QFont("Monospace")`.
         """
         super().__init__(parent)
         self.__line_numbers_enabled = enableLineNumbers
@@ -405,7 +408,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
         self.__lineNumberPanel = LineNumberPanel(self) if enableLineNumbers else None
         self.__lineNumberPanelConnections = self.__configure_line_numbers_panel() if enableLineNumbers else []
-        self._lineNumberPanelWidth = self.calc_line_number_panel_width()
+        self._lineNumberPanelWidth = self.__calc_line_number_panel_width()
         self.__last_block_number = -1
 
         self.__info_panel: QPythonPlainTextEditInfoPanel | None = None
@@ -433,12 +436,18 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         self.setViewportMargins(0, 0, 0, 0)
 
     def getCurrentLineBackgroundColor(self) -> QColor:
+        """Background color for current line"""
         return self.__current_line_background_color
 
     def getBackgroundColor(self) -> QColor:
+        """Background color for the whole editor"""
         return self.__background_color
 
     def getLineNumberColor(self) -> QColor:
+        """
+        If line number column is present (enabled), then this is a color for the vertical line
+        that separates line number column from the code.
+        """
         return self.__line_number_color
 
     @override
@@ -448,17 +457,20 @@ class QPythonPlainTextEdit(QPlainTextEdit):
             self.__lineNumberPanel.resizeEvent(e)
 
     def getInfoPanel(self) -> QWidget:
+        """
+        Returns info panel to be used at the bottom of the larger widget for embedding. Do not override this method.
+        """
         if self.__info_panel is None:
             self.__info_panel = QPythonPlainTextEditInfoPanel(self)
 
         assert self.__info_panel is not None
         return self.__info_panel
 
-    def calc_line_number_panel_width(self) -> int:
+    def __calc_line_number_panel_width(self) -> int:
         return (len(str(self.blockCount())) + 3) * self.current_font_horizontal_advance
 
     def __signal_handler_block_count_changed(self, newBlockCount: int) -> None:
-        self._lineNumberPanelWidth = self.calc_line_number_panel_width()
+        self._lineNumberPanelWidth = self.__calc_line_number_panel_width()
         self.setViewportMargins(self._lineNumberPanelWidth, 0, 0, 0)
         self.__lineNumberPanel.update()
 
@@ -807,7 +819,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                 font = self.font()
                 font.setPointSize(font.pointSize() + 1)
                 self.setFont(font)
-                self._lineNumberPanelWidth = self.calc_line_number_panel_width()
+                self._lineNumberPanelWidth = self.__calc_line_number_panel_width()
                 self.__signal_handler_block_count_changed(1)
                 return
 
@@ -815,7 +827,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                 font = self.font()
                 font.setPointSize(font.pointSize() - 1)
                 self.setFont(font)
-                self._lineNumberPanelWidth = self.calc_line_number_panel_width()
+                self._lineNumberPanelWidth = self.__calc_line_number_panel_width()
                 return
 
             if self.actionTriggers["search"].match(event):
@@ -915,6 +927,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
             self.__signal_connected = True
 
     def startSearch(self):
+        """Programmatically trigger appearing search field into the info panel."""
         self.__info_panel.search_field_panel.resetSearchOffsets(self.textCursor().position())
         self.__info_panel.search_field_panel.setVisible(True)
         self.__info_panel.search_field_panel.search_field.setFocus()
@@ -922,7 +935,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
     def setHighlightStyle(self, highlightStyle: str) -> None:
         """
         Sets new highlight style. This will trigger re-rendering of text if new style is different from currently
-        selected. Note that this is a NO-OP if syntax highlighting is disabled
+        selected. Note that this is a NO-OP if syntax highlighting is disabled.
         """
         if self.__highlightStyle != highlightStyle:
             saved_position = self.textCursor().position()
@@ -961,6 +974,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
             self.setPlainText(self.toPlainText())
 
     def enableLineNumbers(self, enableLineNumbers: bool) -> None:
+        """Enables or disables presence of line number column in the left edge of the editor."""
         if enableLineNumbers:
             self.__line_numbers_enabled = True
             self.__lineNumberPanel = LineNumberPanel(self)
@@ -971,6 +985,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
             self.__unconfigure_line_numbers_panel()
 
     def lineNumbersEnabled(self) -> bool:
+        """Returns true if line numbers column is enabled, false otherwise"""
         return self.__line_numbers_enabled
 
     def listAvailableHighlightStyles(self) -> list[str]:
@@ -978,17 +993,3 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         Returns list of available highlight styles that can be used with this instance of QPythonPlainTextEdit class.
         """
         return list(self.__styles.keys())
-
-    def getEmbeddingPanel(self) -> QWidget:
-        """
-        Returns QWidget with this editor and info panel at the bottom. This is a preferred way to
-        add/embedd QPythonPlainTextEdit in your application.
-        """
-        panel = QWidget()
-        panel.setContentsMargins(0, 0, 0, 0)
-        layout = QVBoxLayout()
-        panel.setLayout(layout)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self, stretch=1)
-        layout.addWidget(self.getInfoPanel())
-        return panel

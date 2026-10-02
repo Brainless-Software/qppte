@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 from tree_sitter import Point
 
-from qppte.qpythonplaintextedit import QPythonPlainTextEdit
+from qppte.qpythonplaintextwidget import QPythonPlainTextWidget
 
 
 class TextEditorWindow(QMainWindow):
@@ -28,10 +28,12 @@ class TextEditorWindow(QMainWindow):
         self.setWindowTitle("QPythonPlainTextEdit Demo")
         self.setGeometry(100, 100, 800, 600)
 
-        text_edit = QPythonPlainTextEdit(highlightStyle="Light", enableLineNumbers=True)
+        text_widget = QPythonPlainTextWidget()
+        text_widget.editor.setHighlightStyle("Light")
+        text_widget.editor.enableLineNumbers(True)
         search_action = QAction("Search", self)
-        search_action.setShortcut(text_edit.actionTriggers["search"].get_q_key_combintation())
-        search_action.triggered.connect(text_edit.startSearch)
+        search_action.setShortcut(text_widget.editor.actionTriggers["search"].get_q_key_combintation())
+        search_action.triggered.connect(text_widget.editor.startSearch)
         self.addAction(search_action)
 
         root_panel = QWidget()
@@ -39,10 +41,10 @@ class TextEditorWindow(QMainWindow):
         root_panel.setLayout(layout)
 
         styles_selector = QComboBox()
-        styles_selector.addItems(text_edit.listAvailableHighlightStyles())
-        styles_selector.setCurrentText(text_edit.getHighlightStyle())
+        styles_selector.addItems(text_widget.editor.listAvailableHighlightStyles())
+        styles_selector.setCurrentText(text_widget.editor.getHighlightStyle())
 
-        styles_selector.currentTextChanged.connect(text_edit.setHighlightStyle)
+        styles_selector.currentTextChanged.connect(text_widget.editor.setHighlightStyle)
 
         tools_panel_1 = QWidget()
         tools_layout_1 = QHBoxLayout()
@@ -56,7 +58,7 @@ class TextEditorWindow(QMainWindow):
         highlighting_enabled_cb.setChecked(True)
 
         def toggle_highlighting(enabled: bool):
-            text_edit.setEnableSyntaxHighlighting(enabled)
+            text_widget.editor.setEnableSyntaxHighlighting(enabled)
 
         highlighting_enabled_cb.toggled.connect(toggle_highlighting)
 
@@ -74,22 +76,22 @@ class TextEditorWindow(QMainWindow):
         fixed_font_families = [f for f in font_families if QFontDatabase.isFixedPitch(f)]
         font_families_selector = QComboBox()
         font_families_selector.addItems(fixed_font_families)
-        font_families_selector.setCurrentText(text_edit.font().family())
-        font_families_selector.currentTextChanged.connect(text_edit.setFont)
+        font_families_selector.setCurrentText(text_widget.editor.font().family())
+        font_families_selector.currentTextChanged.connect(text_widget.editor.setFont)
         tools_layout_2.addWidget(QLabel("Font"))
         tools_layout_2.addWidget(font_families_selector)
         tools_layout_2.addWidget(QLabel("    "))
         linenum_enabled_cb = QCheckBox("Line Numbers Enabled")
         tools_layout_2.addWidget(linenum_enabled_cb)
         tools_layout_2.addWidget(QWidget(), stretch=1)
-        linenum_enabled_cb.setChecked(text_edit.lineNumbersEnabled())
+        linenum_enabled_cb.setChecked(text_widget.editor.lineNumbersEnabled())
 
-        linenum_enabled_cb.toggled.connect(text_edit.enableLineNumbers)
+        linenum_enabled_cb.toggled.connect(text_widget.editor.enableLineNumbers)
 
         layout.addWidget(tools_panel_1)
         layout.addWidget(tools_panel_2)
 
-        layout.addWidget(text_edit.getEmbeddingPanel())
+        layout.addWidget(text_widget)
 
         self.setCentralWidget(root_panel)
 
@@ -115,7 +117,7 @@ class A:
         \"\"\" String representation of class A \"\"\"
         return f"Instance of class {self.__class__.__name__}({self.a})"
 """
-        text_edit.setPlainText(self.sample_text)
+        text_widget.editor.setPlainText(self.sample_text)
 
         menu_bar = QMenuBar()
 
@@ -124,7 +126,7 @@ class A:
                 self, caption="Import project from file", dir=str(Path.home()), filter="*.py"
             )
             if file_name != "":
-                text_edit.setPlainText(Path(file_name).read_text())
+                text_widget.editor.setPlainText(Path(file_name).read_text())
 
         file_menu = QMenu("&File", menu_bar)
         file_menu.addAction("&Open", open_file)
@@ -135,13 +137,13 @@ class A:
         edit_menu = QMenu("&Edit", menu_bar)
         edit_menu.addAction(
             "&Undo [Ctrl-Z]",
-            lambda: text_edit.keyPressEvent(
+            lambda: text_widget.editor.keyPressEvent(
                 QKeyEvent(QtCore.QEvent.Type.KeyPress, Qt.Key.Key_Z, QtCore.Qt.KeyboardModifier.ControlModifier, "z")
             ),
         )
         edit_menu.addAction(
             "&Redo [Ctrl-R]",
-            lambda: text_edit.keyPressEvent(
+            lambda: text_widget.editor.keyPressEvent(
                 QKeyEvent(QtCore.QEvent.Type.KeyPress, Qt.Key.Key_R, QtCore.Qt.KeyboardModifier.ControlModifier, "z")
             ),
         )
@@ -175,28 +177,6 @@ def get_offset(lines: list[str], p: Point) -> int:
 def main():
     app = QApplication(sys.argv)
     window = TextEditorWindow()
-
-    # # show parsed tree
-    # input_lines = window.sample_text.splitlines()
-    # input_text_bytes = window.sample_text.encode()
-    # tree = PYTHON_PARSER.parse(input_text_bytes)
-    # print("=========== PARSED TREE ===========")
-    # pretty_print(tree.root_node, input_text_bytes, show_matched_text=False)
-    # print("===================================")
-    #
-    # # do query and show captured results
-    # print("=========== QUERY RESULTS ===========")
-    # query_cursor = QueryCursor(HIGHLIGHTER_QUERY)
-    # captures = query_cursor.captures(tree.root_node)
-    #
-    # for capture_name in captures:
-    #     for node in captures[capture_name]:
-    #         start_offset = get_offset(input_lines, node.start_point)
-    #         end_offset = get_offset(input_lines, node.end_point)
-    #         print(
-    #             f"@{capture_name:20} {node.start_point.row:2}:{node.start_point.column:<2} [{window.sample_text[start_offset:end_offset]}]"
-    #         )
-
     window.show()
     sys.exit(app.exec())
 

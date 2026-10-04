@@ -1,10 +1,9 @@
 import re
 from collections import deque
-from collections.abc import Sequence
 from contextlib import suppress
 from functools import cache, reduce
 from threading import Lock
-from typing import Callable, NamedTuple, override
+from typing import Callable, Sequence, NamedTuple, override
 
 import tree_sitter_python
 from line_number_panel import LineNumberPanel
@@ -23,6 +22,28 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QTextEdit, QVBoxLayout, QWidget
 from style import DEFAULT_STYLES, TextCharFormat
 from tree_sitter import Language, Node, Parser, Query, QueryCursor
+from PySide6 import QtCore
+from PySide6.QtGui import (
+    QFont,
+    QKeyEvent,
+    QPalette,
+    Qt,
+    QTextCharFormat,
+    QTextCursor,
+)
+from PySide6.QtWidgets import (
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPlainTextEdit,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+from tree_sitter import Language, Node, Parser, Point, Query, QueryCursor
+
+from qppte.style import DEFAULT_STYLES, TextCharFormat
 
 PY_LANGUAGE = Language(tree_sitter_python.language())
 PYTHON_PARSER = Parser(PY_LANGUAGE)
@@ -82,10 +103,11 @@ HIGHLIGHTER_QUERY = Query(
 COMMENT_REGEX = re.compile(r"^(\s*)#\s?")
 NO_COMMENT_REGEX = re.compile(r"^(\s*)")
 LEADING_SPACE = re.compile(r"""^(\s*).*""")
+LINE_NUM_AND_COLUMN_REGEX = re.compile(r"^\s*(\d+)(:(\d+))?\s*$")
 
 
 class ActionTrigger(NamedTuple):
-    key: int
+    keys: tuple[int]
     modifiers: tuple[int]
 
     @cache
@@ -93,14 +115,19 @@ class ActionTrigger(NamedTuple):
         return reduce(lambda acc, m: acc | m, self.modifiers, QtCore.Qt.KeyboardModifier.NoModifier)
 
     def match(self, event: QKeyEvent) -> bool:
-        if event.key() == self.key and (self.modifiers == [] or self.get_modifiers() == event.modifiers()):
+        if event.key() in self.keys and (self.modifiers == [] or self.get_modifiers() == event.modifiers()):
             return True
         else:
             return False
 
+    # TODO MGH - ActionTrigger has been modified to allow multiple key combinations (to support Key_Enter, Key_Return)
+    #           This class method seems to be a one-off to set the shortcut key for 'Search'.
+    #           This works for now, but having singly Key values instead of a tuple would be better, even at the cost of
+    #           some duplication of handling RETURN and ENTER keys.
     @cache
-    def get_q_key_combintation(self):
-        return QtCore.QKeyCombination(self.get_modifiers(), self.key)
+    def get_q_key_combination(self):
+        return QtCore.QKeyCombination(self.get_modifiers(), self.keys[0])
+
 
 
 class UndoOp(NamedTuple):
@@ -109,30 +136,36 @@ class UndoOp(NamedTuple):
 
 
 DEFAULT_ACTION_TRIGGERS: dict[str, ActionTrigger] = {
-    "indent_block": ActionTrigger(Qt.Key.Key_Tab, tuple()),
-    "clear_selection": ActionTrigger(Qt.Key.Key_Escape, tuple()),
-    "backspace": ActionTrigger(Qt.Key.Key_Backspace, tuple()),
-    "new_line_enter": ActionTrigger(Qt.Key.Key_Enter, tuple()),
-    "new_line_return": ActionTrigger(Qt.Key.Key_Return, tuple()),
-    "undo": ActionTrigger(Qt.Key.Key_Z, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-    "redo": ActionTrigger(Qt.Key.Key_R, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-    "unindent": ActionTrigger(Qt.Key.Key_Backtab, (QtCore.Qt.KeyboardModifier.ShiftModifier,)),
-    "delete_lines": ActionTrigger(Qt.Key.Key_Y, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "indent_block": ActionTrigger((Qt.Key.Key_Tab,), tuple()),
+    "clear_selection": ActionTrigger((Qt.Key.Key_Escape,), tuple()),
+    "backspace": ActionTrigger((Qt.Key.Key_Backspace,), tuple()),
+    "new_line": ActionTrigger(
+        (
+            Qt.Key.Key_Enter,
+            Qt.Key.Key_Return,
+        ),
+        tuple(),
+    ),
+    "undo": ActionTrigger((Qt.Key.Key_Z, ), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "redo": ActionTrigger((Qt.Key.Key_R,), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "unindent": ActionTrigger((Qt.Key.Key_Backtab,), (QtCore.Qt.KeyboardModifier.ShiftModifier,)),
+    "delete_lines": ActionTrigger((Qt.Key.Key_Y,), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "goto_line": ActionTrigger((Qt.Key.Key_G,), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
     "move_line_up": ActionTrigger(
-        Qt.Key.Key_Up, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+        (Qt.Key.Key_Up,), (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
     ),
     "move_line_down": ActionTrigger(
-        Qt.Key.Key_Down, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+        (Qt.Key.Key_Down,), (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
     ),
-    "duplicate_line": ActionTrigger(Qt.Key.Key_D, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-    "toggle_comment_block": ActionTrigger(Qt.Key.Key_Slash, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "duplicate_line": ActionTrigger((Qt.Key.Key_D,), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "toggle_comment_block": ActionTrigger((Qt.Key.Key_Slash,), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
     "increase_font_size": ActionTrigger(
-        Qt.Key.Key_Plus, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+        (Qt.Key.Key_Plus,), (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
     ),
     "decrease_font_size": ActionTrigger(
-        Qt.Key.Key_Underscore, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+        (Qt.Key.Key_Underscore,), (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
     ),
-    "search": ActionTrigger(Qt.Key.Key_F, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "search": ActionTrigger((Qt.Key.Key_F,  ), (QtCore.Qt.KeyboardModifier.ControlModifier,)),
 }
 
 
@@ -332,6 +365,89 @@ class QPythonPlainTextEditInfoPanel(QWidget):
         layout.addWidget(self.line_num_label, alignment=Qt.AlignmentFlag.AlignRight)
 
 
+class GotoLineDialog(QDialog):
+    def __init__(self, parent, initial_text: Callable[[str | None], str]):
+        super().__init__(parent)
+        self.setWindowTitle("Go to Line:Column")
+        text_edit: QPythonPlainTextEdit = parent
+
+        layout = QVBoxLayout()
+
+        topPanel = QWidget()
+        topPanelLayout = QHBoxLayout()
+        topPanel.setLayout(topPanelLayout)
+        topPanelLayout.addWidget(QLabel("[Line] [:Column]"))
+        line_num_input = QLineEdit(initial_text(None))
+        line_num_input.selectAll()
+        topPanelLayout.addWidget(line_num_input)
+
+        layout.addWidget(topPanel)
+
+        buttonPanel = QWidget()
+        buttonPanelLayout = QHBoxLayout()
+        buttonPanel.setLayout(buttonPanelLayout)
+        buttonPanelLayout.addWidget(QLabel(), stretch=1)
+
+        def ok():
+
+            input_text = line_num_input.text()
+            match = LINE_NUM_AND_COLUMN_REGEX.match(input_text)
+            if match:
+                line_num = int(match.group(1)) - 1
+                column_text = match.group(3)
+                b = text_edit.document().findBlockByLineNumber(min(line_num, text_edit.blockCount() - 1))
+                text_edit.setTextCursor(QTextCursor(b))
+
+                if column_text is None:
+                    # move to the beginning of the line
+                    c = text_edit.textCursor()
+                    c.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor)
+                    text_edit.setTextCursor(c)
+                else:
+                    # move to the requested column
+                    c = text_edit.textCursor()
+                    c.movePosition(QTextCursor.MoveOperation.EndOfLine, QTextCursor.MoveMode.MoveAnchor)
+                    text_edit.setTextCursor(c)
+
+                    c = text_edit.textCursor()
+                    max_column_num = c.columnNumber()
+                    if column_text is not None:
+                        column = int(column_text) - 1
+                        c.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor)
+                        c.movePosition(
+                            QTextCursor.MoveOperation.NextCharacter,
+                            QTextCursor.MoveMode.MoveAnchor,
+                            min(column, max_column_num),
+                        )
+                        text_edit.setTextCursor(c)
+                initial_text(input_text)
+                self.close()
+
+        ok_button = QPushButton("Ok", autoDefault=True)
+        ok_button.clicked.connect(ok)
+        buttonPanelLayout.addWidget(ok_button, stretch=1)
+
+        cancel_button = QPushButton("Cancel")
+        buttonPanelLayout.addWidget(cancel_button, stretch=1)
+        cancel_button.clicked.connect(self.close)
+        layout.addWidget(buttonPanel)
+
+        self.setLayout(layout)
+
+
+class DefaultLastUsedGotoLineText(Callable[[str | None], str]):
+    def __init__(self):
+        self.last_used_text: str = ""
+
+    def __call__(self, text: str | None) -> str:
+        if text is not None:
+            self.last_used_text = text
+        return self.last_used_text
+
+
+DEFAULT_LAST_USED_GOTO_LINE_TEXT = DefaultLastUsedGotoLineText()
+
+
 class QPythonPlainTextEdit(QPlainTextEdit):
     # Emitted whenever the cursor enters a different line
     # Currently handled by LineNumberPanel
@@ -341,15 +457,17 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         self,
         parent: QWidget | None = None,
         *,
-        highlightStyle: str = "Light",
-        enableLineNumbers: bool = False,
+        highlightStyle: str = "default",
+        enableLineNumbers: bool = True,
         enableSyntaxHighlighting: bool = True,
         syntaxHighlightStyles: dict[str, dict[str, TextCharFormat | str]] | None = None,
         tabWidthSpaces: int = 4,
         actionTriggers: dict[str, ActionTrigger] | None = None,
         font: QFont = QFont("Monospace"),
+        initial_goto_line_text: Callable[[str | None], str] = DEFAULT_LAST_USED_GOTO_LINE_TEXT,
     ):
         """
+        QPythonPlainTextEdit constructor. Intended to be used for displaying or edit Python code in place
         QPythonPlainTextEdit constructor. Intended to be used for displaying or edit Python code in place
         of QPLainTextEdit.
 
@@ -364,6 +482,8 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         :param actionTriggers: dictionary containing keystroke definitions for all custom actions used in this class.
             If None (default), then `DEFAULT_ACTION_TRIGGERS` is used.
         :param font: font to be used with this widget. Default is `QFont("Monospace")`.
+        :param initial_goto_line_text: Callback used to set and retrieve initial value in `GotoLineDialog`. Default
+            is a callback that sets and uses global shared value remembering last used entered text.
         """
         super().__init__(parent)
         self.__line_numbers_enabled = enableLineNumbers
@@ -401,6 +521,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         self.__redo_queue = deque[UndoOp](maxlen=200)
 
         self.setFont(font)
+        self.__initial_goto_line_text = initial_goto_line_text
         self.current_font_horizontal_advance = QFontMetrics(self.font()).horizontalAdvance("9")
 
         self.__lineNumberPanel = LineNumberPanel(self) if enableLineNumbers else None
@@ -480,8 +601,8 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
     def setTabWidth(self, tabWidthSpaces: int) -> None:
         """
-        Tabs are always transformed into spaces when typing. This functions defines into how many spaces it is
-        transformed. By default, TAB is converted into 4 empty space characters.
+        Tabs are always transformed into spaces when typing. This functions sets into how many spaces it is
+        transformed. By default, a TAB is converted into 4 empty space characters.
         """
         self.__tab_width_num_spaces = tabWidthSpaces
         self.__tab_spaces = " " * self.__tab_width_num_spaces
@@ -535,6 +656,10 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                 c.removeSelectedText()
                 c.deleteChar()
                 self.setTextCursor(c)
+                return
+
+            if self.actionTriggers["goto_line"].match(event):
+                GotoLineDialog(self, self.__initial_goto_line_text).exec()
                 return
 
             if self.actionTriggers["indent_block"].match(event):
@@ -676,9 +801,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                     super().keyPressEvent(event)
                 return
 
-            if self.actionTriggers["new_line_enter"].match(event) or self.actionTriggers["new_line_return"].match(
-                event
-            ):
+            if self.actionTriggers["new_line"].match(event):
                 # pressing Enter or Return
                 c = self.textCursor()
                 self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
@@ -751,7 +874,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                 return
 
             if self.actionTriggers["toggle_comment_block"].match(event):
-                # (Un)Comment line or a selection of lines on Ctrl-/
+                # (Un)Comment out line or selection of lines on Ctrl-/
                 c = self.textCursor()
                 self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
                 one_line_comment = False
@@ -845,6 +968,11 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                 self.__undo_queue.append(UndoOp(self.toPlainText(), self.textCursor().position()))
 
         super().keyPressEvent(event)
+
+    def __setBackground(self):
+        palette = QPalette()
+        palette.setColor(QPalette.ColorRole.Base, self.__highlightStyleDict["QPlainTextEdit_background_color"])
+        self.setPalette(palette)
 
     def __highlight(self) -> None:
         if not self.__syntax_highlighting_enabled:

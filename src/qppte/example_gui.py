@@ -30,7 +30,7 @@ class TextEditorWindow(QMainWindow):
 
         text_edit = QPythonPlainTextEdit(highlightStyle="Light", enableLineNumbers=True)
         search_action = QAction("Search", self)
-        search_action.setShortcut(text_edit.actionTriggers["search"].get_q_key_combintation())
+        search_action.setShortcut(text_edit.actionTriggers["search"].get_q_key_combination())
         search_action.triggered.connect(text_edit.startSearch)
         self.addAction(search_action)
 

@@ -619,6 +619,76 @@ class QPythonPlainTextEdit(QPlainTextEdit):
     @override
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.type() == QtCore.QEvent.Type.KeyPress:
+            if self.actionTriggers["unindent"].match(event):
+                c = self.textCursor()
+                self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
+                if c.hasSelection():
+                    # we will be moving entire block
+                    selection_start = c.selectionStart()
+                    selection_end = c.selectionEnd()
+                    c.setPosition(selection_start)
+                    c.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor)
+                    superblock_start = c.position()
+                    c.setPosition(selection_end, QTextCursor.MoveMode.KeepAnchor)
+                    c.movePosition(QTextCursor.MoveOperation.EndOfLine, QTextCursor.MoveMode.KeepAnchor)
+                    lines = c.selection().toPlainText().splitlines()
+                    c.removeSelectedText()
+
+                    end_offset = 0
+                    start_offset = -1
+                    new_lines = []
+                    for line in lines:
+                        new_line = line.lstrip()
+                        new_num_spaces = len(line) - len(new_line) - self.__tab_width_num_spaces
+                        if new_num_spaces > 0:
+                            new_line = (" " * new_num_spaces) + new_line
+                        if start_offset == -1:
+                            start_offset = len(line) - len(new_line)
+                        end_offset += len(line) - len(new_line)
+                        new_lines.append(new_line)
+                    c.insertText("\n".join(new_lines))
+                    c = self.textCursor()
+                    c.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor)
+                    superbloc_end_min_limit = c.position()
+                    c.setPosition(
+                        max(selection_start - start_offset, superblock_start), QTextCursor.MoveMode.MoveAnchor
+                    )
+                    c.setPosition(
+                        max(selection_end - end_offset, superbloc_end_min_limit), QTextCursor.MoveMode.KeepAnchor
+                    )
+                    self.setTextCursor(c)
+                else:
+                    pos = c.position()
+                    column = c.columnNumber()
+                    c.select(QTextCursor.SelectionType.LineUnderCursor)
+                    text = c.selection().toPlainText()
+                    m = LEADING_SPACE.match(text)
+                    if m:
+                        sp = m.group(1)
+                        len_sp = len(sp)
+                        if len_sp > 0:
+                            new_text = (
+                                text.lstrip()
+                                if len_sp < self.__tab_width_num_spaces
+                                else text.removeprefix(self.__tab_spaces)
+                            )
+                            new_len_sp = len_sp - (len(text) - len(new_text))
+                            c.removeSelectedText()
+                            c.insertText(new_text)
+                            if column <= new_len_sp:
+                                c.setPosition(pos)
+                            else:
+                                if column > len_sp:
+                                    c.setPosition(pos - self.__tab_width_num_spaces)
+                                else:
+                                    c.movePosition(
+                                        QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor
+                                    )
+                                    c.position() + new_len_sp
+                                    c.setPosition(c.position() + new_len_sp)
+                            self.setTextCursor(c)
+                return
+
             if event.text().isprintable() and event.modifiers() in (
                 QtCore.Qt.KeyboardModifier.NoModifier,
                 QtCore.Qt.KeyboardModifier.ShiftModifier,
@@ -700,76 +770,6 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                         c.setPosition(pos + self.__tab_width_num_spaces)
                         self.setTextCursor(c)
 
-                return
-
-            if self.actionTriggers["unindent"].match(event):
-                c = self.textCursor()
-                self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
-                if c.hasSelection():
-                    # we will be moving entire block
-                    selection_start = c.selectionStart()
-                    selection_end = c.selectionEnd()
-                    c.setPosition(selection_start)
-                    c.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor)
-                    superblock_start = c.position()
-                    c.setPosition(selection_end, QTextCursor.MoveMode.KeepAnchor)
-                    c.movePosition(QTextCursor.MoveOperation.EndOfLine, QTextCursor.MoveMode.KeepAnchor)
-                    lines = c.selection().toPlainText().splitlines()
-                    c.removeSelectedText()
-
-                    end_offset = 0
-                    start_offset = -1
-                    new_lines = []
-                    for line in lines:
-                        new_line = line.lstrip()
-                        new_num_spaces = len(line) - len(new_line) - self.__tab_width_num_spaces
-                        if new_num_spaces > 0:
-                            new_line = (" " * new_num_spaces) + new_line
-                        if start_offset == -1:
-                            start_offset = len(line) - len(new_line)
-                        end_offset += len(line) - len(new_line)
-                        new_lines.append(new_line)
-                    c.insertText("\n".join(new_lines))
-                    c = self.textCursor()
-                    c.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor)
-                    superbloc_end_min_limit = c.position()
-                    c.setPosition(
-                        max(selection_start - start_offset, superblock_start), QTextCursor.MoveMode.MoveAnchor
-                    )
-                    c.setPosition(
-                        max(selection_end - end_offset, superbloc_end_min_limit), QTextCursor.MoveMode.KeepAnchor
-                    )
-                    self.setTextCursor(c)
-                else:
-                    pos = c.position()
-                    column = c.columnNumber()
-                    c.select(QTextCursor.SelectionType.LineUnderCursor)
-                    text = c.selection().toPlainText()
-                    m = LEADING_SPACE.match(text)
-                    if m:
-                        sp = m.group(1)
-                        len_sp = len(sp)
-                        if len_sp > 0:
-                            new_text = (
-                                text.lstrip()
-                                if len_sp < self.__tab_width_num_spaces
-                                else text.removeprefix(self.__tab_spaces)
-                            )
-                            new_len_sp = len_sp - (len(text) - len(new_text))
-                            c.removeSelectedText()
-                            c.insertText(new_text)
-                            if column <= new_len_sp:
-                                c.setPosition(pos)
-                            else:
-                                if column > len_sp:
-                                    c.setPosition(pos - self.__tab_width_num_spaces)
-                                else:
-                                    c.movePosition(
-                                        QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor
-                                    )
-                                    c.position() + new_len_sp
-                                    c.setPosition(c.position() + new_len_sp)
-                            self.setTextCursor(c)
                 return
 
             if self.actionTriggers["backspace"].match(event):

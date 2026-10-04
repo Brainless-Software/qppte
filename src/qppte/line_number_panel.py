@@ -1,5 +1,5 @@
 from PySide6.QtCore import QLine, QRect, QRectF
-from PySide6.QtGui import QColor, QFontMetrics, QPainter, QPaintEvent, QResizeEvent, Qt, QBrush, QColorConstants
+from PySide6.QtGui import QColor, QFontMetrics, QPainter, QPaintEvent, QResizeEvent, Qt
 from PySide6.QtWidgets import QWidget
 
 
@@ -29,20 +29,9 @@ class LineNumberPanel(QWidget):
         painter = QPainter(self)
         event_rect = event.rect()
         painter.fillRect(event_rect, self.editor_parent.getBackgroundColor())
-        line_color = QColor(self.editor_parent.getLineNumberColor())
-        line_color.setAlpha(80)
-        painter.setPen(line_color)
-        painter.drawLine(
-            QLine(
-                self.editor_parent._lineNumberPanelWidth - 2,
-                0,
-                self.editor_parent._lineNumberPanelWidth - 2,
-                event_rect.height(),
-            )
-        )
+
         painter.setPen(self.editor_parent.getLineNumberColor())
         block = self.editor_parent.firstVisibleBlock()
-        block_number = block.blockNumber()
         bounding_rect_of_block: QRectF = self.editor_parent.blockBoundingGeometry(block)
         translated_bounding_rect_of_block: QRectF = bounding_rect_of_block.translated(
             self.editor_parent.contentOffset()
@@ -52,13 +41,13 @@ class LineNumberPanel(QWidget):
 
         height = QFontMetrics(self.font()).height()
         while block.isValid() and (top <= event_rect.bottom()):
+            block_number = block.blockNumber()
             if block.isVisible() and (bottom >= event_rect.top()):
-                divider_line_offset = 2; ## To keep the vertical line between the this panel and editor area visible
-                line_rect: QRectF = QRectF(0, top, self.width()-divider_line_offset,  height)
                 if block_number == self.___current_line_number:
-                    painter.fillRect(line_rect, self.editor_parent.getCurrentLineBackgroundColor()) #This messes up
-                else:
-                    painter.fillRect(line_rect, self.editor_parent.getBackgroundColor())
+                    painter.fillRect(
+                        QRectF(0, top, self.width(), height), self.editor_parent.getCurrentLineBackgroundColor()
+                    )
+
                 painter.drawText(
                     5,
                     int(top),
@@ -70,7 +59,18 @@ class LineNumberPanel(QWidget):
             block = block.next()
             top = bottom
             bottom = top + self.editor_parent.blockBoundingRect(block).height()
-            block_number += 1
+
+        line_color = QColor(self.editor_parent.getLineNumberColor())
+        line_color.setAlpha(80)
+        painter.setPen(line_color)
+        painter.drawLine(
+            QLine(
+                self.editor_parent._lineNumberPanelWidth - 2,
+                0,
+                self.editor_parent._lineNumberPanelWidth - 2,
+                event_rect.height(),
+            )
+        )
 
     def on_cursor_moved_line(self, line_number: int):
         self.___current_line_number = line_number

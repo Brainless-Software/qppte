@@ -2,6 +2,7 @@ import re
 from collections import deque
 from collections.abc import Sequence
 from contextlib import suppress
+from dataclasses import dataclass
 from threading import Lock
 from typing import Callable, NamedTuple, override
 
@@ -323,6 +324,46 @@ class GotoLineDialog(QDialog):
         self.setLayout(layout)
 
 
+@dataclass
+class Settings:
+    """
+    Settings for QPythonPlainTextEdit
+
+    Attributes:
+        highlightStyle: Name of a style to be picked from `syntaxHighlightStyles` argument.
+        enableLineNumbers: Indicates if we show line numbers in the editor or not.
+        enableSyntaxHighlighting: Enable or disable syntax highlighting.
+        tabWidthSpaces: When Tab key is pressed it is always converted into a number of space defined by this field.
+        fontFamily: font family to be used with this widget.
+        fontSizePt: font point size.
+    """
+
+    highlightStyle: str
+    enableLineNumbers: bool
+    enableSyntaxHighlighting: bool
+    tabWidthSpaces: int
+    fontFamily: str
+    fontSizePt: int
+
+    def apply(self, editor: "QPythonPlainTextEdit") -> None:
+        editor.setHighlightStyle(self.highlightStyle)
+        editor.enableLineNumbers(self.enableLineNumbers)
+        editor.setEnableSyntaxHighlighting(self.enableSyntaxHighlighting)
+        editor.setTabWidth(self.tabWidthSpaces)
+        editor.setFont(QFont(self.fontFamily, self.fontSizePt))
+
+    @staticmethod
+    def default() -> "Settings":
+        return Settings(
+            highlightStyle="Light",
+            enableLineNumbers=True,
+            enableSyntaxHighlighting=True,
+            tabWidthSpaces=4,
+            fontFamily="Monospace",
+            fontSizePt=12,
+        )
+
+
 class DefaultLastUsedGotoLineText(Callable[[str | None], str]):
     def __init__(self):
         self.last_used_text: str = ""
@@ -346,13 +387,9 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         self,
         parent: QWidget | None = None,
         *,
-        highlightStyle: str = "Light",
-        enableLineNumbers: bool = True,
-        enableSyntaxHighlighting: bool = True,
+        settings: Settings = Settings.default(),
         syntaxHighlightStyles: dict[str, dict[str, TextCharFormat | str]] | None = None,
-        tabWidthSpaces: int = 4,
         actionTriggers: dict[str, ActionTrigger] | None = None,
-        font: QFont = QFont("Monospace"),
         initial_goto_line_text: Callable[[str | None], str] = DEFAULT_LAST_USED_GOTO_LINE_TEXT,
     ):
         """
@@ -361,36 +398,34 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
         Args:
             parent: QWidget parent class if any
-            highlightStyle: Name of a style to be picked from `syntaxHighlightStyles` argument. Default is `Light`.
-            enableLineNumbers: Indicates if we show line numbers in the editor or not. Default is `True`.
-            enableSyntaxHighlighting: Enable or disable syntax highlighting. Default is True.
+            settings: Settings to be applied to this widget.
             syntaxHighlightStyles: dict containing highlight rules for various highlight styles. If None (default),
                 then it is resolved to `qptte.style.DEFAULT_STYLES`.
-            tabWidthSpaces: When Tab key is pressed it is always converted into a number of space defined by this
-                argument. Default is 4 spaces.
             actionTriggers: dictionary containing keystroke definitions for all custom actions used in this class.
                 If None (default), then `DEFAULT_ACTION_TRIGGERS` is used.
-            font: font to be used with this widget. Default is `QFont("Monospace")`.
             initial_goto_line_text: Callback used to set and retrieve initial value in `GotoLineDialog`. Default
                 is a callback that sets and uses global shared value remembering last used entered text.
 
         """
         super().__init__(parent)
-        self.__line_numbers_enabled = enableLineNumbers
-        self.__syntax_highlighting_enabled = enableSyntaxHighlighting
+        self.settings = settings
+        self.__line_numbers_enabled = settings.enableLineNumbers
+        self.__syntax_highlighting_enabled = settings.enableSyntaxHighlighting
         self.__working = False
         self.__styles = DEFAULT_STYLES if syntaxHighlightStyles is None else syntaxHighlightStyles
-        if highlightStyle not in self.__styles:
-            raise ValueError(f"Highlight style [{highlightStyle}] is not present in the list of available styles")
+        if settings.highlightStyle not in self.__styles:
+            raise ValueError(
+                f"Highlight style [{settings.highlightStyle}] is not present in the list of available styles"
+            )
 
-        self.__tab_width_num_spaces = tabWidthSpaces
+        self.__tab_width_num_spaces = settings.tabWidthSpaces
         self.__tab_spaces = " " * self.__tab_width_num_spaces
 
         self.actionTriggers = DEFAULT_ACTION_TRIGGERS if actionTriggers is None else actionTriggers
 
         self.setAutoFillBackground(True)
-        self.__highlightStyle = highlightStyle
-        self.__highlightStyleDict = self.__styles[highlightStyle]
+        self.__highlightStyle = settings.highlightStyle
+        self.__highlightStyleDict = self.__styles[settings.highlightStyle]
         self.__background_color = QColor(self.__highlightStyleDict["QPlainTextEdit_background_color"])
         palette = self.palette()
         palette.setColor(QPalette.ColorRole.Base, self.__background_color)
@@ -412,13 +447,14 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
         self.__initial_goto_line_text = initial_goto_line_text
 
-        self.setFont(font)
         self.current_font_horizontal_advance = QFontMetrics(self.font()).horizontalAdvance("9")
-
-        self.__lineNumberPanel = LineNumberPanel(self) if enableLineNumbers else None
-        self.__lineNumberPanelConnections = self.__configure_line_numbers_panel() if enableLineNumbers else []
+        self.__lineNumberPanel = LineNumberPanel(self) if settings.enableLineNumbers else None
+        self.__lineNumberPanelConnections = self.__configure_line_numbers_panel() if settings.enableLineNumbers else []
         self._lineNumberPanelWidth = self.__calc_line_number_panel_width()
         self.__last_block_number = -1
+
+        self.setFont(QFont(settings.fontFamily, settings.fontSizePt))
+        self.current_font_horizontal_advance = QFontMetrics(self.font()).horizontalAdvance("9")
 
         self.__info_panel: QPythonPlainTextEditInfoPanel | None = None
         self._lowerCaseCode = self.toPlainText().lower()
@@ -522,9 +558,10 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         return (len(str(self.blockCount())) + 3) * self.current_font_horizontal_advance
 
     def __signal_handler_block_count_changed(self, _: int) -> None:
-        self._lineNumberPanelWidth = self.__calc_line_number_panel_width()
+        self._lineNumberPanelWidth = 0 if self.__lineNumberPanel is None else self.__calc_line_number_panel_width()
         self.setViewportMargins(self._lineNumberPanelWidth, 0, 0, 0)
-        self.__lineNumberPanel.update()
+        if self.__lineNumberPanel is not None:
+            self.__lineNumberPanel.update()
 
     def __signal_handler_update_request(self, _: QtCore.QRect, dy: int) -> None:
         if dy > 0:
@@ -566,6 +603,8 @@ class QPythonPlainTextEdit(QPlainTextEdit):
     def setFont(self, font: QFont | str | Sequence[str]) -> None:
         super().setFont(font)
         self.current_font_horizontal_advance = QFontMetrics(self.font()).horizontalAdvance("9")
+        self._lineNumberPanelWidth = self.__calc_line_number_panel_width()
+        self.__signal_handler_block_count_changed(1)
 
     @override
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -961,21 +1000,6 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                 self.setTextCursor(c)
                 return
 
-            if self.actionTriggers["increase_font_size"].match(event):
-                font = self.font()
-                font.setPointSize(font.pointSize() + 1)
-                self.setFont(font)
-                self._lineNumberPanelWidth = self.__calc_line_number_panel_width()
-                self.__signal_handler_block_count_changed(1)
-                return
-
-            if self.actionTriggers["decrease_font_size"].match(event):
-                font = self.font()
-                font.setPointSize(font.pointSize() - 1)
-                self.setFont(font)
-                self._lineNumberPanelWidth = self.__calc_line_number_panel_width()
-                return
-
             if self.actionTriggers["search"].match(event):
                 self.startSearch()
                 return
@@ -1122,14 +1146,15 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
     def enableLineNumbers(self, enableLineNumbers: bool) -> None:
         """Enables or disables presence of line number column in the left edge of the editor."""
-        if enableLineNumbers:
-            self.__line_numbers_enabled = True
-            self.__lineNumberPanel = LineNumberPanel(self)
-            self.__lineNumberPanelConnections = self.__configure_line_numbers_panel()
-            self.__lineNumberPanel.show()
-        else:
-            self.__line_numbers_enabled = False
-            self.__unconfigure_line_numbers_panel()
+        if enableLineNumbers != self.__line_numbers_enabled:
+            if enableLineNumbers:
+                self.__line_numbers_enabled = True
+                self.__lineNumberPanel = LineNumberPanel(self)
+                self.__lineNumberPanelConnections = self.__configure_line_numbers_panel()
+                self.__lineNumberPanel.show()
+            else:
+                self.__line_numbers_enabled = False
+                self.__unconfigure_line_numbers_panel()
 
     def lineNumbersEnabled(self) -> bool:
         """Returns true if line numbers column is enabled, false otherwise"""

@@ -79,3 +79,5 @@ DEFAULT_STYLES: dict[str, dict[str, TextCharFormat | str]] = {
         "QPlainTextEdit_current_line_background_color": "#202020",
     },
 }
+
+DEFAULT_STYLES_PROVIDER = lambda: DEFAULT_STYLES

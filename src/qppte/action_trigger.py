@@ -55,11 +55,5 @@ DEFAULT_ACTION_TRIGGERS: dict[str, ActionTrigger] = {
     "join_two_lines": ActionTrigger(
         Qt.Key.Key_J, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
     ),
-    "increase_font_size": ActionTrigger(
-        Qt.Key.Key_Plus, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
-    ),
-    "decrease_font_size": ActionTrigger(
-        Qt.Key.Key_Underscore, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
-    ),
     "search": ActionTrigger(Qt.Key.Key_F, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
 }

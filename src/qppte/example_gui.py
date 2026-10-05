@@ -1,24 +1,19 @@
 import sys
 from pathlib import Path
 
-from PySide6 import QtCore
-from PySide6.QtGui import QAction, QFontDatabase, QKeyEvent, Qt
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
-    QComboBox,
     QFileDialog,
-    QHBoxLayout,
-    QLabel,
     QMainWindow,
     QMenu,
     QMenuBar,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 from tree_sitter import Point
 
+from qppte.qpythonplaintextsettings import QPythonPlainTextSettingsDialog
 from qppte.qpythonplaintextwidget import QPythonPlainTextWidget
 
 
@@ -39,58 +34,6 @@ class TextEditorWindow(QMainWindow):
         root_panel = QWidget()
         layout = QVBoxLayout()
         root_panel.setLayout(layout)
-
-        styles_selector = QComboBox()
-        styles_selector.addItems(text_widget.editor.listAvailableHighlightStyles())
-        styles_selector.setCurrentText(text_widget.editor.getHighlightStyle())
-
-        styles_selector.currentTextChanged.connect(text_widget.editor.setHighlightStyle)
-
-        tools_panel_1 = QWidget()
-        tools_layout_1 = QHBoxLayout()
-        tools_panel_1.setLayout(tools_layout_1)
-        tools_layout_1.addWidget(QLabel("Highlighting Style"))
-        tools_layout_1.addWidget(styles_selector)
-        tools_layout_1.addWidget(QLabel("        "))
-
-        highlighting_enabled_cb = QCheckBox("Highlighting Enabled")
-        tools_layout_1.addWidget(highlighting_enabled_cb)
-        highlighting_enabled_cb.setChecked(True)
-
-        def toggle_highlighting(enabled: bool):
-            text_widget.editor.setEnableSyntaxHighlighting(enabled)
-
-        highlighting_enabled_cb.toggled.connect(toggle_highlighting)
-
-        tools_layout_1.addWidget(QLabel(""), stretch=1)
-
-        exit_button = QPushButton("Exit")
-        tools_layout_1.addWidget(exit_button)
-        exit_button.clicked.connect(self.close)
-
-        tools_panel_2 = QWidget()
-        tools_layout_2 = QHBoxLayout()
-        tools_panel_2.setLayout(tools_layout_2)
-
-        font_families = QFontDatabase.families()
-        fixed_font_families = [f for f in font_families if QFontDatabase.isFixedPitch(f)]
-        font_families_selector = QComboBox()
-        font_families_selector.addItems(fixed_font_families)
-        font_families_selector.setCurrentText(text_widget.editor.font().family())
-        font_families_selector.currentTextChanged.connect(text_widget.editor.setFont)
-        tools_layout_2.addWidget(QLabel("Font"))
-        tools_layout_2.addWidget(font_families_selector)
-        tools_layout_2.addWidget(QLabel("    "))
-        linenum_enabled_cb = QCheckBox("Line Numbers Enabled")
-        tools_layout_2.addWidget(linenum_enabled_cb)
-        tools_layout_2.addWidget(QWidget(), stretch=1)
-        linenum_enabled_cb.setChecked(text_widget.editor.lineNumbersEnabled())
-
-        linenum_enabled_cb.toggled.connect(text_widget.editor.enableLineNumbers)
-
-        layout.addWidget(tools_panel_1)
-        layout.addWidget(tools_panel_2)
-
         layout.addWidget(text_widget)
 
         self.setCentralWidget(root_panel)
@@ -131,22 +74,21 @@ class A:
         file_menu = QMenu("&File", menu_bar)
         file_menu.addAction("&Open", open_file)
         file_menu.addSeparator()
+        file_menu.addAction(
+            "&Settings",
+            lambda: QPythonPlainTextSettingsDialog(self, text_widget.editor.settings, text_widget.editor).exec(),
+        )
+        file_menu.addSeparator()
         file_menu.addAction("&Quit", self.close)
         menu_bar.addMenu(file_menu)
 
         edit_menu = QMenu("&Edit", menu_bar)
         edit_menu.addAction(
-            "&Undo [Ctrl-Z]",
-            lambda: text_widget.editor.keyPressEvent(
-                QKeyEvent(QtCore.QEvent.Type.KeyPress, Qt.Key.Key_Z, QtCore.Qt.KeyboardModifier.ControlModifier, "z")
-            ),
-        )
+            "&Undo", lambda: text_widget.editor.keyPressEvent(text_widget.editor.actionTriggers["undo"].getQKeyEvent())
+        ).setShortcut(text_widget.editor.actionTriggers["undo"].getQKeyCombination())
         edit_menu.addAction(
-            "&Redo [Ctrl-R]",
-            lambda: text_widget.editor.keyPressEvent(
-                QKeyEvent(QtCore.QEvent.Type.KeyPress, Qt.Key.Key_R, QtCore.Qt.KeyboardModifier.ControlModifier, "z")
-            ),
-        )
+            "&Redo", lambda: text_widget.editor.keyPressEvent(text_widget.editor.actionTriggers["redo"].getQKeyEvent())
+        ).setShortcut(text_widget.editor.actionTriggers["redo"].getQKeyCombination())
         edit_menu.addSeparator()
         menu_bar.addMenu(edit_menu)
 

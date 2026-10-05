@@ -1,4 +1,5 @@
 from .action_trigger import DEFAULT_ACTION_TRIGGERS, ActionTrigger
-from .qpythonplaintextedit import QPythonPlainTextEdit
+from .qpythonplaintextedit import QPythonPlainTextEdit, Settings
+from .qpythonplaintextsettings import QPythonPlainTextSettings, QPythonPlainTextSettingsDialog
 from .qpythonplaintextwidget import QPythonPlainTextWidget
 from .style import DEFAULT_STYLES, TextCharFormat

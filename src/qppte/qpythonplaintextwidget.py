@@ -6,7 +6,7 @@ from qppte import QPythonPlainTextEdit
 class QPythonPlainTextWidget(QWidget):
     def __init__(self, parent=None, *, editor: QPythonPlainTextEdit | None = None):
         """
-        Primary class for embedding python code editor in your application.
+        Primary class for embedding Python code editor in your application.
 
         Args:
             parent: QWidget parent object if any.

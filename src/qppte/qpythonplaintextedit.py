@@ -153,7 +153,9 @@ DEFAULT_ACTION_TRIGGERS: dict[str, ActionTrigger] = {
 
 
 class SearchField(QLineEdit):
-    def __init__(self, editor_parent: QPlainTextEdit, hide: Callable[[], None]):
+    def __init__(
+        self, editor_parent: QPlainTextEdit, hide: Callable[[], None], cc_label_appearance: Callable[[], None]
+    ):
         super().__init__()
         self.editor_parent: QPythonPlainTextEdit = editor_parent
         self.hide = hide
@@ -169,6 +171,7 @@ class SearchField(QLineEdit):
         self.follow_up_offset = -1
         self.follow_down_offset = -1
         self.case_sensitive = True
+        self.cc_label_appearance = cc_label_appearance
 
     @override
     def focusInEvent(self, event: QtGui.QFocusEvent, /) -> None:
@@ -243,6 +246,10 @@ class SearchField(QLineEdit):
                 self.nextDownSearch()
             elif key == QtCore.Qt.Key.Key_Up:
                 self.nextUpSearch()
+            elif key == QtCore.Qt.Key.Key_C and modifiers == QtCore.Qt.KeyboardModifier.AltModifier:
+                self.case_sensitive = not self.case_sensitive
+                self.cc_label_appearance()
+                return
             elif key == QtCore.Qt.Key.Key_F and modifiers == QtCore.Qt.KeyboardModifier.ControlModifier:
                 self.selectAll()
             elif (
@@ -269,10 +276,9 @@ class SearchFieldPanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setVisible(False)
 
-        self.search_field = SearchField(editor_parent, hide=lambda: self.setVisible(False))
-        layout.addWidget(self.search_field, alignment=Qt.AlignmentFlag.AlignLeft)
-
         cc_label = QLabel("Cc")
+
+        self.search_field: SearchField
 
         def set_cc_label_appearance():
             if self.search_field.case_sensitive:
@@ -280,10 +286,14 @@ class SearchFieldPanel(QWidget):
             else:
                 cc_label.setStyleSheet("QLabel { }")
 
+        self.search_field = SearchField(
+            editor_parent, hide=lambda: self.setVisible(False), cc_label_appearance=set_cc_label_appearance
+        )
         set_cc_label_appearance()
+        layout.addWidget(self.search_field, alignment=Qt.AlignmentFlag.AlignLeft)
 
         cc_label.setContentsMargins(5, 1, 5, 1)
-        cc_label.setToolTip("Match case in search")
+        cc_label.setToolTip("Match case [Alt+C]")
 
         def toggle_cc_search(_):
             self.search_field.case_sensitive = not self.search_field.case_sensitive
@@ -593,10 +603,10 @@ class QPythonPlainTextEdit(QPlainTextEdit):
             self.setExtraSelections([selection])
 
             # repaint line highlight in number line column only if block number actually changed
-            self.__current_block_number = self.textCursor().blockNumber()
-            if self.__last_block_number != self.__current_block_number:
-                self.signalCursorMovedLine.emit(self.__current_block_number)
-                self.__last_block_number = self.__current_block_number
+            current_block_number = self.textCursor().blockNumber()
+            if self.__last_block_number != current_block_number:
+                self.signalCursorMovedLine.emit(current_block_number)
+                self.__last_block_number = current_block_number
 
     def setTabWidth(self, tabWidthSpaces: int) -> None:
         """
@@ -687,7 +697,6 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                                     c.movePosition(
                                         QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor
                                     )
-                                    c.position() + new_len_sp
                                     c.setPosition(c.position() + new_len_sp)
                             self.setTextCursor(c)
                 return

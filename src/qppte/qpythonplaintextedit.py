@@ -155,7 +155,7 @@ DEFAULT_ACTION_TRIGGERS: dict[str, ActionTrigger] = {
 class SearchField(QLineEdit):
     def __init__(self, editor_parent: QPlainTextEdit, hide: Callable[[], None]):
         super().__init__()
-        self.editor_parent = editor_parent
+        self.editor_parent: QPythonPlainTextEdit = editor_parent
         self.hide = hide
         self.setContentsMargins(0, 0, 0, 0)
         self.setMinimumWidth(40 * QFontMetrics(self.font()).horizontalAdvance("9"))
@@ -180,7 +180,7 @@ class SearchField(QLineEdit):
         super().focusOutEvent(event)
         self.hide()
 
-    def doSearch(self, input_search_string: str | None) -> None:
+    def doSearch(self, _: str) -> None:
         search_string = self.text().strip()
         code = self.editor_parent.toPlainText() if self.case_sensitive else self.editor_parent._lowerCaseCode
         if self.starting_offset == -1:
@@ -573,12 +573,12 @@ class QPythonPlainTextEdit(QPlainTextEdit):
     def __calc_line_number_panel_width(self) -> int:
         return (len(str(self.blockCount())) + 3) * self.current_font_horizontal_advance
 
-    def __signal_handler_block_count_changed(self, newBlockCount: int) -> None:
+    def __signal_handler_block_count_changed(self, _: int) -> None:
         self._lineNumberPanelWidth = self.__calc_line_number_panel_width()
         self.setViewportMargins(self._lineNumberPanelWidth, 0, 0, 0)
         self.__lineNumberPanel.update()
 
-    def __signal_handler_update_request(self, rect: QtCore.QRect, dy: int) -> None:
+    def __signal_handler_update_request(self, _: QtCore.QRect, dy: int) -> None:
         if dy > 0:
             self.__lineNumberPanel.scroll(0, dy)
 
@@ -787,7 +787,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                     if m:
                         leading_space = m.group(1)
                         if column <= len(leading_space):
-                            new_line = (self.__tab_spaces) + text
+                            new_line = self.__tab_spaces + text
                             c.removeSelectedText()
                             c.insertText(new_line)
                         else:
@@ -808,7 +808,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                 c.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.KeepAnchor)
                 selected_text = c.selectedText()
                 if selected_text.strip() == "":
-                    # cursor is placed in the leading white space
+                    # cursor is placed in the leading whitespace
                     spaces_to_remove = column % self.__tab_width_num_spaces
                     if spaces_to_remove > 0:
                         c.removeSelectedText()
@@ -1059,9 +1059,10 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
     def startSearch(self):
         """Programmatically trigger appearing search field into the info panel."""
-        self.__info_panel.search_field_panel.resetSearchOffsets(self.textCursor().position())
-        self.__info_panel.search_field_panel.setVisible(True)
-        self.__info_panel.search_field_panel.search_field.setFocus()
+        if self.__info_panel is not None:
+            self.__info_panel.search_field_panel.resetSearchOffsets(self.textCursor().position())
+            self.__info_panel.search_field_panel.setVisible(True)
+            self.__info_panel.search_field_panel.search_field.setFocus()
 
     def setHighlightStyle(self, highlightStyle: str) -> None:
         """

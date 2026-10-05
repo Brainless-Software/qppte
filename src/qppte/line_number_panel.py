@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QWidget
 
 
 class LineNumberPanel(QWidget):
-    ___current_line_number: int = None
+    ___current_line_number: int | None = None
 
     def __init__(self, editor_parent):
         super().__init__(editor_parent)

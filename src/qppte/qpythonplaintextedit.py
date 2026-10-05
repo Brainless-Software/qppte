@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMenu,
     QPlainTextEdit,
     QPushButton,
     QTextEdit,
@@ -199,19 +200,19 @@ class SearchFieldPanel(QWidget):
 
         up_label = QLabel("↑")
         up_label.setMouseTracking(True)
-        up_label.enterEvent = lambda s: up_label.setStyleSheet(
+        up_label.enterEvent = lambda _: up_label.setStyleSheet(
             "QLabel { border: 1px solid gray; background-color: gray; color: white; }"
         )
-        up_label.leaveEvent = lambda s: up_label.setStyleSheet("QLabel { border: 1px solid gray; }")
-        up_label.mousePressEvent = lambda s: self.search_field.nextUpSearch()
+        up_label.leaveEvent = lambda _: up_label.setStyleSheet("QLabel { border: 1px solid gray; }")
+        up_label.mousePressEvent = lambda _: self.search_field.nextUpSearch()
         up_label.setStyleSheet("QLabel { border: 1px solid gray; }")
         up_label.setToolTip("Previous Occurrence")
         layout.addWidget(up_label, alignment=Qt.AlignmentFlag.AlignLeft)
         down_label = QLabel("↓")
-        down_label.enterEvent = lambda s: down_label.setStyleSheet(
+        down_label.enterEvent = lambda _: down_label.setStyleSheet(
             "QLabel { border: 1px solid gray; background-color: gray; color: white; }"
         )
-        down_label.leaveEvent = lambda s: down_label.setStyleSheet("QLabel { border: 1px solid gray; }")
+        down_label.leaveEvent = lambda _: down_label.setStyleSheet("QLabel { border: 1px solid gray; }")
         down_label.mousePressEvent = lambda s: self.search_field.nextDownSearch()
 
         down_label.setStyleSheet("QLabel { border: 1px solid gray; }")
@@ -458,11 +459,54 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         """
         return self.__line_number_color
 
+    def getContextManu(self) -> QMenu:
+        """Returns context menu. Override this method alter content of the context menu"""
+        menu = QMenu(self)
+        menu.addAction(
+            "&Undo",
+            self.actionTriggers["undo"].getQKeyCombination(),
+            lambda: self.keyPressEvent(self.actionTriggers["undo"].getQKeyEvent()),
+        ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditUndo))
+        menu.addAction(
+            "&Redo",
+            self.actionTriggers["redo"].getQKeyCombination(),
+            lambda: self.keyPressEvent(self.actionTriggers["redo"].getQKeyEvent()),
+        ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditRedo))
+        menu.addSeparator()
+        menu.addAction(
+            "Cu&t",
+            self.actionTriggers["cut"].getQKeyCombination(),
+            lambda: self.keyPressEvent(self.actionTriggers["cut"].getQKeyEvent()),
+        ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditCut))
+        menu.addAction(
+            "&Copy",
+            self.actionTriggers["copy"].getQKeyCombination(),
+            lambda: self.keyPressEvent(self.actionTriggers["copy"].getQKeyEvent()),
+        ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditCopy))
+        menu.addAction(
+            "&Paste",
+            self.actionTriggers["paste"].getQKeyCombination(),
+            lambda: self.keyPressEvent(self.actionTriggers["paste"].getQKeyEvent()),
+        ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditPaste))
+        menu.addSeparator()
+        menu.addAction(
+            "&Select All",
+            self.actionTriggers["select_all"].getQKeyCombination(),
+            lambda: self.keyPressEvent(self.actionTriggers["select_all"].getQKeyEvent()),
+        ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditSelectAll))
+        return menu
+
     @override
-    def resizeEvent(self, e: QtGui.QResizeEvent, /) -> None:
-        super().resizeEvent(e)
+    def contextMenuEvent(self, event: QtGui.QContextMenuEvent, /) -> None:
+        menu = self.getContextManu()
+        menu.exec_(self.mapToGlobal(event.pos()))
+        del menu
+
+    @override
+    def resizeEvent(self, event: QtGui.QResizeEvent, /) -> None:
+        super().resizeEvent(event)
         if self.__lineNumberPanel is not None:
-            self.__lineNumberPanel.resizeEvent(e)
+            self.__lineNumberPanel.resizeEvent(event)
 
     def getInfoPanel(self) -> QWidget:
         """
@@ -526,6 +570,42 @@ class QPythonPlainTextEdit(QPlainTextEdit):
     @override
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.type() == QtCore.QEvent.Type.KeyPress:
+            if self.actionTriggers["select_all"].match(event):
+                self.selectAll()
+                return
+
+            if self.actionTriggers["cut"].match(event):
+                c = self.textCursor()
+                self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
+                if c.hasSelection():
+                    QtGui.QGuiApplication.clipboard().setText(c.selectedText())
+                    c.removeSelectedText()
+                else:
+                    c.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor)
+                    c.movePosition(QTextCursor.MoveOperation.EndOfLine, QTextCursor.MoveMode.KeepAnchor)
+                    QtGui.QGuiApplication.clipboard().setText(c.selectedText())
+                    c.removeSelectedText()
+                    c.deleteChar()
+                self.setTextCursor(c)
+                return
+
+            if self.actionTriggers["copy"].match(event):
+                c = self.textCursor()
+                if c.hasSelection():
+                    QtGui.QGuiApplication.clipboard().setText(c.selectedText())
+                else:
+                    c.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor)
+                    c.movePosition(QTextCursor.MoveOperation.EndOfLine, QTextCursor.MoveMode.KeepAnchor)
+                    self.setTextCursor(c)
+                    QtGui.QGuiApplication.clipboard().setText(c.selectedText() + "\n")
+                return
+
+            if self.actionTriggers["paste"].match(event):
+                c = self.textCursor()
+                self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
+                c.insertText(QtGui.QGuiApplication.clipboard().text())
+                return
+
             if self.actionTriggers["unindent"].match(event):
                 c = self.textCursor()
                 self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
@@ -602,6 +682,38 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                 self.__redo_queue.clear()
                 c = self.textCursor()
                 self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
+                key = event.key()
+                if key == QtCore.Qt.Key.Key_QuoteDbl and c.hasSelection():
+                    new_text = '"' + c.selectedText() + '"'
+                    c.removeSelectedText()
+                    c.insertText(new_text)
+                    self.setTextCursor(c)
+                    return
+                if key == QtCore.Qt.Key.Key_Apostrophe and c.hasSelection():
+                    new_text = "'" + c.selectedText() + "'"
+                    c.removeSelectedText()
+                    c.insertText(new_text)
+                    self.setTextCursor(c)
+                    return
+                if key == QtCore.Qt.Key.Key_ParenLeft and c.hasSelection():
+                    new_text = "(" + c.selectedText() + ")"
+                    c.removeSelectedText()
+                    c.insertText(new_text)
+                    self.setTextCursor(c)
+                    return
+                if key == QtCore.Qt.Key.Key_BracketLeft and c.hasSelection():
+                    new_text = "[" + c.selectedText() + "]"
+                    c.removeSelectedText()
+                    c.insertText(new_text)
+                    self.setTextCursor(c)
+                    return
+                if key == QtCore.Qt.Key.Key_BraceLeft and c.hasSelection():
+                    new_text = "{" + c.selectedText() + "}"
+                    c.removeSelectedText()
+                    c.insertText(new_text)
+                    self.setTextCursor(c)
+                    return
+
                 super().keyPressEvent(event)
                 return
 

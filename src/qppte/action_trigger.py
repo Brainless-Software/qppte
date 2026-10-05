@@ -20,8 +20,13 @@ class ActionTrigger(NamedTuple):
             return False
 
     @cache
-    def get_q_key_combintation(self):
+    def getQKeyCombination(self) -> QtCore.QKeyCombination:
         return QtCore.QKeyCombination(self.get_modifiers(), self.key)
+
+    @cache
+    def getQKeyEvent(self) -> QKeyEvent:
+        c = self.getQKeyCombination()
+        return QKeyEvent(QtCore.QEvent.Type.KeyPress, c.key(), c.keyboardModifiers())
 
 
 DEFAULT_ACTION_TRIGGERS: dict[str, ActionTrigger] = {
@@ -30,6 +35,10 @@ DEFAULT_ACTION_TRIGGERS: dict[str, ActionTrigger] = {
     "backspace": ActionTrigger(Qt.Key.Key_Backspace, tuple()),
     "new_line_enter": ActionTrigger(Qt.Key.Key_Enter, tuple()),
     "new_line_return": ActionTrigger(Qt.Key.Key_Return, tuple()),
+    "select_all": ActionTrigger(Qt.Key.Key_A, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "cut": ActionTrigger(Qt.Key.Key_X, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "copy": ActionTrigger(Qt.Key.Key_C, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "paste": ActionTrigger(Qt.Key.Key_V, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
     "undo": ActionTrigger(Qt.Key.Key_Z, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
     "redo": ActionTrigger(Qt.Key.Key_R, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
     "unindent": ActionTrigger(Qt.Key.Key_Backtab, (QtCore.Qt.KeyboardModifier.ShiftModifier,)),

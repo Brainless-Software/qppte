@@ -32,7 +32,7 @@ class TextEditorWindow(QMainWindow):
         text_widget.editor.setHighlightStyle("Light")
         text_widget.editor.enableLineNumbers(True)
         search_action = QAction("Search", self)
-        search_action.setShortcut(text_widget.editor.actionTriggers["search"].get_q_key_combintation())
+        search_action.setShortcut(text_widget.editor.actionTriggers["search"].getQKeyCombination())
         search_action.triggered.connect(text_widget.editor.startSearch)
         self.addAction(search_action)
 

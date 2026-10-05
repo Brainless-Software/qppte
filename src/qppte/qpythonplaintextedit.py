@@ -2,11 +2,9 @@ import re
 from collections import deque
 from collections.abc import Sequence
 from contextlib import suppress
-from functools import cache, reduce
 from threading import Lock
 from typing import Callable, NamedTuple, override
 
-import tree_sitter_python
 from PySide6 import QtCore, QtGui
 from PySide6.QtGui import (
     QColor,
@@ -30,65 +28,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from tree_sitter import Language, Node, Parser, Query, QueryCursor
+from tree_sitter import Node, QueryCursor
 
+from qppte.action_trigger import DEFAULT_ACTION_TRIGGERS, ActionTrigger
 from qppte.line_number_panel import LineNumberPanel
+from qppte.qppte_tree_sitter import HIGHLIGHTER_QUERY, PYTHON_PARSER
 from qppte.style import DEFAULT_STYLES, TextCharFormat
-
-PY_LANGUAGE = Language(tree_sitter_python.language())
-PYTHON_PARSER = Parser(PY_LANGUAGE)
-HIGHLIGHTER_QUERY = Query(
-    PY_LANGUAGE,
-    """
-        (function_definition
-          name: (identifier) @function_definition)
-
-        (function_definition (identifier) @special_function (#any-of? @special_function 
-                                                                        "__init__" "__new__" "__setattr__" 
-                                                                        "__delattr__" "__eq__" "__ne__" 
-                                                                        "__str__" "__hash__" "__format__" 
-                                                                        "__getattribute__" "__sizeof__" "__dir__" 
-                                                                        "__repr__"))
-        ("." (identifier) @special_function (#any-of? @special_function 
-                                                        "__init__" "__new__" "__setattr__" "__delattr__" "__eq__" 
-                                                        "__ne__" "__str__" "__hash__" "__format__" "__getattribute__" 
-                                                        "__sizeof__" "__dir__" "__repr__"))
-
-        (type) @type
-
-        (class_definition
-          name: (identifier) @class_definition_name)
-
-        (call (identifier) @function_call)
-        (decorator "@" (identifier)) @decorator 
-        (decorator "@" (call (identifier) @decorator))  
-        (decorator ("@" @decorator))
-
-        (string_start) @string
-        (string_content) @string
-        (string_end) @string
-
-        ["def" "return" "if" "else" "class" "assert" "async" "await" "break" "continue" "del" "elif" 
-         "else" "except" "finally" "for" "global" "lambda" "pass" "raise" "nonlocal" "return" "try" 
-         "while" "yield" "as" "with" "import" "from" "match" "case" "in"] @keyword
-
-        (true) @keyword
-        (false) @keyword
-
-        (integer) @number
-        (float) @number
-
-        (keyword_argument (identifier) @keyword_argument) 
-
-        ((identifier) @self (#eq? @self "self"))
-
-        (comment) @line_comment
-        
-        (function_definition (block . (expression_statement (string) @docstring)))
-        (class_definition (block . (expression_statement (string) @docstring)))
-        (module . (expression_statement (string) @docstring))
-    """,
-)
 
 COMMENT_REGEX = re.compile(r"^(\s*)#\s?")
 NO_COMMENT_REGEX = re.compile(r"^(\s*)")
@@ -96,60 +41,9 @@ LEADING_SPACE = re.compile(r"""^(\s*).*""")
 LINE_NUM_AND_COLUMN_REGEX = re.compile(r"^\s*(\d+)(:(\d+))?\s*$")
 
 
-class ActionTrigger(NamedTuple):
-    key: int
-    modifiers: tuple[int]
-
-    @cache
-    def get_modifiers(self) -> int:
-        return reduce(lambda acc, m: acc | m, self.modifiers, QtCore.Qt.KeyboardModifier.NoModifier)
-
-    def match(self, event: QKeyEvent) -> bool:
-        if event.key() == self.key and (self.modifiers == [] or self.get_modifiers() == event.modifiers()):
-            return True
-        else:
-            return False
-
-    @cache
-    def get_q_key_combintation(self):
-        return QtCore.QKeyCombination(self.get_modifiers(), self.key)
-
-
 class UndoOp(NamedTuple):
     text: str
     cursor_position: int
-
-
-DEFAULT_ACTION_TRIGGERS: dict[str, ActionTrigger] = {
-    "indent_block": ActionTrigger(Qt.Key.Key_Tab, tuple()),
-    "clear_selection": ActionTrigger(Qt.Key.Key_Escape, tuple()),
-    "backspace": ActionTrigger(Qt.Key.Key_Backspace, tuple()),
-    "new_line_enter": ActionTrigger(Qt.Key.Key_Enter, tuple()),
-    "new_line_return": ActionTrigger(Qt.Key.Key_Return, tuple()),
-    "undo": ActionTrigger(Qt.Key.Key_Z, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-    "redo": ActionTrigger(Qt.Key.Key_R, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-    "unindent": ActionTrigger(Qt.Key.Key_Backtab, (QtCore.Qt.KeyboardModifier.ShiftModifier,)),
-    "delete_lines": ActionTrigger(Qt.Key.Key_Y, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-    "goto_line": ActionTrigger(Qt.Key.Key_G, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-    "move_line_up": ActionTrigger(
-        Qt.Key.Key_Up, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
-    ),
-    "move_line_down": ActionTrigger(
-        Qt.Key.Key_Down, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
-    ),
-    "duplicate_line": ActionTrigger(Qt.Key.Key_D, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-    "toggle_comment_block": ActionTrigger(Qt.Key.Key_Slash, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-    "join_two_lines": ActionTrigger(
-        Qt.Key.Key_J, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
-    ),
-    "increase_font_size": ActionTrigger(
-        Qt.Key.Key_Plus, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
-    ),
-    "decrease_font_size": ActionTrigger(
-        Qt.Key.Key_Underscore, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
-    ),
-    "search": ActionTrigger(Qt.Key.Key_F, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
-}
 
 
 class SearchField(QLineEdit):

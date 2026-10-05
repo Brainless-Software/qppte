@@ -1,0 +1,56 @@
+from functools import cache, reduce
+from typing import NamedTuple
+
+from PySide6 import QtCore
+from PySide6.QtGui import QKeyEvent, Qt
+
+
+class ActionTrigger(NamedTuple):
+    key: int
+    modifiers: tuple[int]
+
+    @cache
+    def get_modifiers(self) -> int:
+        return reduce(lambda acc, m: acc | m, self.modifiers, QtCore.Qt.KeyboardModifier.NoModifier)
+
+    def match(self, event: QKeyEvent) -> bool:
+        if event.key() == self.key and (self.modifiers == [] or self.get_modifiers() == event.modifiers()):
+            return True
+        else:
+            return False
+
+    @cache
+    def get_q_key_combintation(self):
+        return QtCore.QKeyCombination(self.get_modifiers(), self.key)
+
+
+DEFAULT_ACTION_TRIGGERS: dict[str, ActionTrigger] = {
+    "indent_block": ActionTrigger(Qt.Key.Key_Tab, tuple()),
+    "clear_selection": ActionTrigger(Qt.Key.Key_Escape, tuple()),
+    "backspace": ActionTrigger(Qt.Key.Key_Backspace, tuple()),
+    "new_line_enter": ActionTrigger(Qt.Key.Key_Enter, tuple()),
+    "new_line_return": ActionTrigger(Qt.Key.Key_Return, tuple()),
+    "undo": ActionTrigger(Qt.Key.Key_Z, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "redo": ActionTrigger(Qt.Key.Key_R, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "unindent": ActionTrigger(Qt.Key.Key_Backtab, (QtCore.Qt.KeyboardModifier.ShiftModifier,)),
+    "delete_lines": ActionTrigger(Qt.Key.Key_Y, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "goto_line": ActionTrigger(Qt.Key.Key_G, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "move_line_up": ActionTrigger(
+        Qt.Key.Key_Up, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+    ),
+    "move_line_down": ActionTrigger(
+        Qt.Key.Key_Down, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+    ),
+    "duplicate_line": ActionTrigger(Qt.Key.Key_D, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "toggle_comment_block": ActionTrigger(Qt.Key.Key_Slash, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "join_two_lines": ActionTrigger(
+        Qt.Key.Key_J, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+    ),
+    "increase_font_size": ActionTrigger(
+        Qt.Key.Key_Plus, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+    ),
+    "decrease_font_size": ActionTrigger(
+        Qt.Key.Key_Underscore, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+    ),
+    "search": ActionTrigger(Qt.Key.Key_F, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+}

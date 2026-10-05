@@ -139,6 +139,9 @@ DEFAULT_ACTION_TRIGGERS: dict[str, ActionTrigger] = {
     ),
     "duplicate_line": ActionTrigger(Qt.Key.Key_D, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
     "toggle_comment_block": ActionTrigger(Qt.Key.Key_Slash, (QtCore.Qt.KeyboardModifier.ControlModifier,)),
+    "join_two_lines": ActionTrigger(
+        Qt.Key.Key_J, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
+    ),
     "increase_font_size": ActionTrigger(
         Qt.Key.Key_Plus, (QtCore.Qt.KeyboardModifier.ControlModifier, QtCore.Qt.KeyboardModifier.ShiftModifier)
     ),
@@ -697,6 +700,29 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                 c = self.textCursor()
                 self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
                 super().keyPressEvent(event)
+                return
+
+            if self.actionTriggers["join_two_lines"].match(event):
+                c = self.textCursor()
+                c.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor)
+                start_block_position = c.position()
+                c.movePosition(QTextCursor.MoveOperation.EndOfLine, QTextCursor.MoveMode.KeepAnchor)
+                saved_position = c.position()
+                current_line = c.selection().toPlainText().rstrip() + " "
+
+                c.movePosition(QTextCursor.MoveOperation.Down, QTextCursor.MoveMode.MoveAnchor)
+                next_line_position = c.position()
+                if next_line_position != saved_position:
+                    self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
+                    c.movePosition(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.MoveAnchor)
+                    c.movePosition(QTextCursor.MoveOperation.EndOfLine, QTextCursor.MoveMode.KeepAnchor)
+                    next_line = c.selection().toPlainText().lstrip()
+                    end_block_position = c.position()
+                    c.setPosition(start_block_position, QTextCursor.MoveMode.MoveAnchor)
+                    c.setPosition(end_block_position, QTextCursor.MoveMode.KeepAnchor)
+                    c.removeSelectedText()
+                    c.insertText(current_line + next_line)
+                    self.setTextCursor(c)
                 return
 
             if self.actionTriggers["clear_selection"].match(event):

@@ -12,15 +12,15 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-[project.urls]
-Homepage = "https://brainless-software.github.io/qppte"
-Repository = "https://github.com/Brainless-Software/qppte"
-
 dependencies = [
     "pyside6>=6.11.1",
     "tree-sitter>=0.24,!=0.26.0",
     "tree-sitter-python>=0.25.0",
 ]
+
+[project.urls]
+Homepage = "https://brainless-software.github.io/qppte"
+Repository = "https://github.com/Brainless-Software/qppte"
 
 [project.scripts]
 qppte_demo = "qppte.example_gui:main"

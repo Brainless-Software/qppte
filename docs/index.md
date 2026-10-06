@@ -14,4 +14,11 @@ To add this library to your project do
 uv add qppte
 ```
 
+This library includes a small demo application [qppte_demo](https://github.com/Brainless-Software/qppte/blob/master/src/qppte/example_gui.py)
+which you can use to try this editor. To run it do
 
+```shell
+uv tool run --from qppte qppte_demo
+```
+
+You can use the source for it as example of embedding this code editor within you application.

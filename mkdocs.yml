@@ -16,8 +16,5 @@ markdown_extensions:
 
 nav:
   - "Introduction": "index.md"
-#  - "Installation": "install.md"
-#  - "Low level access": "bare_i2c.md"
-#  - "Register model level access": "register_i2c.md"
-#  - "High level programming": "high_level_i2c.md"
-#  - "Programming language reference": "prog_ref.md"
+  - "Embedding editor": "embedding.md"
+  - "Extending editor": "extending.md"

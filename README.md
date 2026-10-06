@@ -6,7 +6,7 @@ it is created with intent to be used within larger application where code editor
 if you application supports plugins in Python and you want to give users ability to create and edit such plugins, then
 you can make this library a dependency in your project and embed this editor. 
 
-More information can be found here.
+More information can be found [here](https://brainless-software.github.io/qppte/).
 
 A poor-main text editor for editing and viewing Python code to be used with [PySide6](https://pypi.org/project/PySide6/)
 library. It supports basic syntax highlighting using [tree-sitter](https://github.com/tree-sitter/py-tree-sitter) and

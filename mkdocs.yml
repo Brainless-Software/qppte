@@ -1,6 +1,8 @@
 site_name: QPPTE
 theme:
   name: material
+  palette:
+    primary: amber
   logo:
     images/typewriter.png
   features:

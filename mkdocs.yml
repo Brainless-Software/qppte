@@ -2,7 +2,7 @@ site_name: QPPTE
 theme:
   name: material
   logo:
-    typwriter.png
+    images/typwriter.png
   features:
     - navigation.sections
 

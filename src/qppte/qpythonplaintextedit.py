@@ -498,33 +498,36 @@ class QPythonPlainTextEdit(QPlainTextEdit):
     def getContextManu(self) -> QMenu:
         """Returns context menu. Override this method alter content of the context menu"""
         menu = QMenu(self)
-        menu.addAction(
-            "&Undo",
-            self.actionTriggers["undo"].getQKeyCombination(),
-            lambda: self.keyPressEvent(self.actionTriggers["undo"].getQKeyEvent()),
-        ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditUndo))
-        menu.addAction(
-            "&Redo",
-            self.actionTriggers["redo"].getQKeyCombination(),
-            lambda: self.keyPressEvent(self.actionTriggers["redo"].getQKeyEvent()),
-        ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditRedo))
-        menu.addSeparator()
-        menu.addAction(
-            "Cu&t",
-            self.actionTriggers["cut"].getQKeyCombination(),
-            lambda: self.keyPressEvent(self.actionTriggers["cut"].getQKeyEvent()),
-        ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditCut))
+        if not self.isReadOnly():
+            menu.addAction(
+                "&Undo",
+                self.actionTriggers["undo"].getQKeyCombination(),
+                lambda: self.keyPressEvent(self.actionTriggers["undo"].getQKeyEvent()),
+            ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditUndo))
+            menu.addAction(
+                "&Redo",
+                self.actionTriggers["redo"].getQKeyCombination(),
+                lambda: self.keyPressEvent(self.actionTriggers["redo"].getQKeyEvent()),
+            ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditRedo))
+            menu.addSeparator()
+            menu.addAction(
+                "Cu&t",
+                self.actionTriggers["cut"].getQKeyCombination(),
+                lambda: self.keyPressEvent(self.actionTriggers["cut"].getQKeyEvent()),
+            ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditCut))
+
         menu.addAction(
             "&Copy",
             self.actionTriggers["copy"].getQKeyCombination(),
             lambda: self.keyPressEvent(self.actionTriggers["copy"].getQKeyEvent()),
         ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditCopy))
-        menu.addAction(
-            "&Paste",
-            self.actionTriggers["paste"].getQKeyCombination(),
-            lambda: self.keyPressEvent(self.actionTriggers["paste"].getQKeyEvent()),
-        ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditPaste))
-        menu.addSeparator()
+        if not self.isReadOnly():
+            menu.addAction(
+                "&Paste",
+                self.actionTriggers["paste"].getQKeyCombination(),
+                lambda: self.keyPressEvent(self.actionTriggers["paste"].getQKeyEvent()),
+            ).setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.EditPaste))
+            menu.addSeparator()
         menu.addAction(
             "&Select All",
             self.actionTriggers["select_all"].getQKeyCombination(),
@@ -608,6 +611,10 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
     @override
     def keyPressEvent(self, event: QKeyEvent) -> None:
+        if self.isReadOnly():
+            super().keyPressEvent(event)
+            return
+
         if event.type() == QtCore.QEvent.Type.KeyPress:
             if self.actionTriggers["select_all"].match(event):
                 self.selectAll()

@@ -11,7 +11,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from tree_sitter import Point
 
 from qppte.qpythonplaintextsettings import QPythonPlainTextSettingsDialog
 from qppte.qpythonplaintextwidget import QPythonPlainTextWidget
@@ -93,27 +92,6 @@ class A:
         menu_bar.addMenu(edit_menu)
 
         self.setMenuBar(menu_bar)
-
-
-def pretty_print(node, input_source_bytes: bytes, indent="", show_matched_text: bool = False):
-    # Named nodes represent actual syntax constructs (like 'function_definition')
-    # Anonymous nodes are structural literal punctuation (like '{' or ';')
-    node_type = node.type if node.is_named else f'"{node.type}"'
-
-    # Print the current node name along with its character span
-    matched_text = input_source_bytes[node.start_byte : node.end_byte].decode("utf-8")
-    if show_matched_text:
-        print(f"{indent}{node_type} [{node.start_byte} - {node.end_byte}] [{matched_text}]")
-    else:
-        print(f"{indent}{node_type} [{node.start_byte} - {node.end_byte}]")
-
-    # Recursively format all children
-    for child in node.children:
-        pretty_print(child, input_source_bytes, indent + "  ")
-
-
-def get_offset(lines: list[str], p: Point) -> int:
-    return sum([len(line) for line in lines[0 : p.row]]) + p.column + p.row
 
 
 def main():

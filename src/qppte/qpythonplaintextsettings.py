@@ -1,7 +1,7 @@
 from typing import Callable
 
 from PySide6.QtCore import Signal
-from PySide6.QtGui import QFontDatabase
+from PySide6.QtGui import QFont, QFontDatabase, QFontMetrics
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -26,10 +26,21 @@ class QPythonPlainTextSettings(QWidget):
     def __init__(
         self,
         parent: QWidget | None = None,
-        /,
         settings: Settings | None = None,
         syntaxHighlightStyles: Callable[[], dict[str, dict[str, TextCharFormat | str]]] = DEFAULT_STYLES_PROVIDER,
+        displayButtons: bool = True,
     ) -> None:
+        """
+        Default settings dialog for QPythonPlainTextEdit. It picks up available settings from `settings` argument
+        and updates it when user clicks on `Ok` button and new settings are different from originally provided.
+
+        Args:
+            parent: parent QObject
+            settings: settings object which is to be used by this widget
+            syntaxHighlightStyles: all highlight styles; used to display drop down box with available styles.
+            displayButtons: to display Ok and Cancel buttons or not. If False, then you can access these buttons
+                by calling `.ok_button()` and `.cancel_button()` to place them elsewhere in your application.
+        """
         super().__init__(parent)
         if settings is None:
             raise ValueError("settings cannot be None")
@@ -75,15 +86,35 @@ class QPythonPlainTextSettings(QWidget):
         font_size_selector.setMinimumWidth(50)
         font_size_selector.setRange(min(7, settings.fontSizePt), max(42, settings.fontSizePt))
         font_size_selector.setValue(settings.fontSizePt)
-        layout.addWidget(mkRow(QLabel("Font Style:"), font_styles_selector, QLabel(" Size:"), font_size_selector))
+        font_row = mkRow(QLabel("Font Style:"), font_styles_selector, QLabel(" Size:"), font_size_selector)
+        layout.addWidget(font_row)
+
+        sample_text_edit = QPythonPlainTextEdit(self)
+        sample_text_edit.setReadOnly(True)
+        sample_text_edit.setPlainText("""class A:
+    def __init__(self):
+        self.x = 1 # initializing x to 1
+    
+    def __repr__(self, /) -> str:
+        \"\"\" String representation of class A \"\"\"
+        return f"Instance of A({self.a})\"""")
+        sample_text_edit.setFont(QFont(settings.fontFamily, settings.fontSizePt))
+        sample_text_edit.setMinimumHeight(10 * QFontMetrics(self.font()).height())
+        sample_text_edit.setMinimumWidth(65 * QFontMetrics(self.font()).horizontalAdvance("9"))
+        layout.addWidget(sample_text_edit)
+
+        def update_sample_font():
+            sample_text_edit.setFont(QFont(font_styles_selector.currentText(), font_size_selector.value()))
+
+        font_styles_selector.currentTextChanged.connect(update_sample_font)
+        font_size_selector.valueChanged.connect(update_sample_font)
+        styles_selector.currentTextChanged.connect(sample_text_edit.setHighlightStyle)
+        enable_syntax_highlighting_cb.toggled.connect(sample_text_edit.setEnableSyntaxHighlighting)
+        show_line_numbers_cb.toggled.connect(sample_text_edit.enableLineNumbers)
 
         layout.addWidget(QWidget(), stretch=1)
 
-        row = QWidget()
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setLayout(QHBoxLayout())
-        row.layout().addWidget(QLabel(""), stretch=1)
-        ok_button = QPushButton("Ok")
+        self.__ok_button = QPushButton("Ok")
 
         def ok():
             new_settings = Settings(
@@ -105,18 +136,49 @@ class QPythonPlainTextSettings(QWidget):
                 self.settings_changed.emit(settings)
             self.ok_called.emit()
 
-        ok_button.clicked.connect(ok)
-        row.layout().addWidget(ok_button)
+        self.__ok_button.clicked.connect(ok)
+        self.__cancel_button = QPushButton("Cancel")
+        self.__cancel_button.clicked.connect(lambda: self.cancel_called.emit())
 
-        cancel_button = QPushButton("Cancel")
-        cancel_button.clicked.connect(lambda: self.cancel_called.emit())
-        row.layout().addWidget(cancel_button)
+        if displayButtons:
+            row = QWidget()
+            row.setContentsMargins(0, 0, 0, 0)
+            row.setLayout(QHBoxLayout())
+            row.layout().addWidget(QLabel(""), stretch=1)
+            row.layout().addWidget(self.__ok_button)
+            row.layout().addWidget(self.__cancel_button)
 
-        layout.addWidget(row)
+            layout.addWidget(row)
+
+    def ok_button(self) -> QPushButton:
+        """
+        Access `Ok` button created for this QPythonPlainTextSettings object.
+        You do that if displayButtons=False. In this case Ok and Cancel buttons are still created but are not placed
+        inside this widget. You can then access them by calling this function and place them within some other
+        context.
+        """
+        return self.__ok_button
+
+    def cancel_button(self) -> QPushButton:
+        """
+        Access `Cancel` button created for this QPythonPlainTextSettings object.
+        You do that if displayButtons=False. In this case Ok and Cancel buttons are still created but are not placed
+        inside this widget. You can then access them by calling this function and place them within some other
+        context.
+        """
+        return self.__cancel_button
 
 
 class QPythonPlainTextSettingsDialog(QDialog):
     def __init__(self, parent, /, settings: Settings, editor: QPythonPlainTextEdit | None = None):
+        """
+        Standalone settings dialog widget to be used when you do not need any customization within you application.
+
+        Args:
+            parent: parent QObject
+            settings: linked settings object; it will be updated when user clicks Ok button.
+            editor: optional linked editor. If not Null then when user clicks Ok, new settings are applied to it.
+        """
         super().__init__(parent)
         self.setWindowTitle("Editor Settings")
         self.setModal(True)

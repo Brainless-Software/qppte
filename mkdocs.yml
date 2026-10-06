@@ -1,0 +1,23 @@
+site_name: QPPTE
+theme:
+  name: material
+  logo:
+    typwriter.png
+  features:
+    - navigation.sections
+
+# Markdown extensions
+markdown_extensions:
+  - attr_list
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - "Introduction": "index.md"
+#  - "Installation": "install.md"
+#  - "Low level access": "bare_i2c.md"
+#  - "Register model level access": "register_i2c.md"
+#  - "High level programming": "high_level_i2c.md"
+#  - "Programming language reference": "prog_ref.md"

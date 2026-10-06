@@ -1,12 +1,21 @@
 [project]
 name = "qppte"
 dynamic = ["version"]
-description = "QPlainTextEdit with Python syntax highlighting"
+description = "Embeddable QPlainTextEdit with Python syntax highlighting"
 readme = "README.md"
 authors = [
     { name = "Dmitri Priimak", email = "priimak@gmail.com" }
 ]
 requires-python = ">=3.13"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+[project.urls]
+Homepage = "https://brainless-software.github.io/qppte"
+Repository = "https://github.com/Brainless-Software/qppte"
+
 dependencies = [
     "pyside6>=6.11.1",
     "tree-sitter>=0.24,!=0.26.0",

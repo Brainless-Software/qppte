@@ -16,5 +16,6 @@ markdown_extensions:
 
 nav:
   - "Introduction": "index.md"
-  - "Embedding editor": "embedding.md"
-  - "Extending editor": "extending.md"
+  - "Features": "features.md"
+  - "Embedding": "embedding.md"
+  - "Extending": "extending.md"

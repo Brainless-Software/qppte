@@ -9,23 +9,25 @@
       
       
       
+        <link rel="prev" href="..">
       
-        <link rel="next" href="embedding/">
+      
+        <link rel="next" href="../extending/">
       
       
         
       
       
-      <link rel="icon" href="assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>QPPTE</title>
+        <title>Embedding editor - QPPTE</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -44,7 +46,7 @@
       
     
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -62,7 +64,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#qppte-qpythonplaintextedit" class="md-skip">
+        <a href="#embedding-code-editor" class="md-skip">
           Skip to content
         </a>
       
@@ -78,9 +80,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="QPPTE" class="md-header__button md-logo" aria-label="QPPTE" data-md-component="logo">
+    <a href=".." title="QPPTE" class="md-header__button md-logo" aria-label="QPPTE" data-md-component="logo">
       
-  <img src="images/typewriter.png" alt="logo">
+  <img src="../images/typewriter.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -97,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Introduction
+              Embedding editor
             
           </span>
         </div>
@@ -175,15 +177,42 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="QPPTE" class="md-nav__button md-logo" aria-label="QPPTE" data-md-component="logo">
+    <a href=".." title="QPPTE" class="md-nav__button md-logo" aria-label="QPPTE" data-md-component="logo">
       
-  <img src="images/typewriter.png" alt="logo">
+  <img src="../images/typewriter.png" alt="logo">
 
     </a>
     QPPTE
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
     
       
       
@@ -201,35 +230,7 @@
         
       
       
-      <a href="." class="md-nav__link md-nav__link--active">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Introduction
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="embedding/" class="md-nav__link">
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -245,6 +246,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -256,7 +258,7 @@
   
   
     <li class="md-nav__item">
-      <a href="extending/" class="md-nav__link">
+      <a href="../extending/" class="md-nav__link">
         
   
   
@@ -311,21 +313,7 @@
 
 
 
-<h1 id="qppte-qpythonplaintextedit">QPPTE - QPythonPlainTextEdit<a class="headerlink" href="#qppte-qpythonplaintextedit" title="Permanent link">&para;</a></h1>
-<p>A poor-main embeddable code editor for python. Written in Python with <a href="https://pypi.org/project/PySide6/">PySide6</a>
-it is created with intent to be used within larger applications where code editor is required. For example 
-if you application supports plugins in Python and you want to give users ability to create and edit such plugins 
-directly within the application, then you can make this library a dependency in your project and embed this editor.</p>
-<p>It supports basic syntax highlighting using <a href="https://github.com/tree-sitter/py-tree-sitter">tree-sitter</a> and keystrokes common to code editors. The styles and 
-the keystrokes can be customized by the user.</p>
-<p>To add this library to your project do</p>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span>qppte
-</code></pre></div>
-<p>This library includes a small demo application <a href="https://github.com/Brainless-Software/qppte/blob/master/src/qppte/example_gui.py">qppte_demo</a>
-which you can use to try this editor. To run it do</p>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>tool<span class="w"> </span>run<span class="w"> </span>--from<span class="w"> </span>qppte<span class="w"> </span>qppte_demo
-</code></pre></div>
-<p>You can use the source for it as example of embedding this code editor within you application.</p>
+<h1 id="embedding-code-editor">Embedding code editor<a class="headerlink" href="#embedding-code-editor" title="Permanent link">&para;</a></h1>
 
 
 
@@ -375,10 +363,10 @@ which you can use to try this editor. To run it do</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.sections"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

@@ -257,9 +257,14 @@
 
 <h1 id="qppte-qpythonplaintextedit">QPPTE - QPythonPlainTextEdit<a class="headerlink" href="#qppte-qpythonplaintextedit" title="Permanent link">&para;</a></h1>
 <p>A poor-main embeddable code editor for python. Written in Python with <a href="https://pypi.org/project/PySide6/">PySide6</a>
-it is created with intent to be used within larger application where code editor is required. For example 
-if you application supports plugins in Python and you want to give users ability to create and edit such plugins, then
-you can make this library a dependency in your project and embed this editor. </p>
+it is created with intent to be used within larger applications where code editor is required. For example 
+if you application supports plugins in Python and you want to give users ability to create and edit such plugins 
+directly within the application, then you can make this library a dependency in your project and embed this editor.</p>
+<p>It supports basic syntax highlighting using <a href="https://github.com/tree-sitter/py-tree-sitter">tree-sitter</a> and keystrokes common to code editors. The styles and 
+the keystrokes can be customized by the user.</p>
+<p>To add this library to your project do</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span>qppte
+</code></pre></div>
 
 
 

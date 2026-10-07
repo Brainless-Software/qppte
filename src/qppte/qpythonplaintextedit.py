@@ -452,7 +452,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
         self.__initial_goto_line_text = initial_goto_line_text
         self.setReadOnly(readOnly)
-        self.setPlainText(text)
+        self.__setPlainText(text)
 
         self.current_font_horizontal_advance = QFontMetrics(self.font()).horizontalAdvance("9")
         self.__lineNumberPanel = LineNumberPanel(self) if settings.enableLineNumbers else None
@@ -728,44 +728,49 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                             self.setTextCursor(c)
                 return
 
-            if event.text().isprintable() and event.modifiers() in (
-                QtCore.Qt.KeyboardModifier.NoModifier,
-                QtCore.Qt.KeyboardModifier.ShiftModifier,
+            if (
+                event.text().isprintable()
+                and event.text() != ""
+                and event.modifiers()
+                in (
+                    QtCore.Qt.KeyboardModifier.NoModifier,
+                    QtCore.Qt.KeyboardModifier.ShiftModifier,
+                )
             ):
                 self.__redo_queue.clear()
                 c = self.textCursor()
                 self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
-                key = event.key()
-                if key == QtCore.Qt.Key.Key_QuoteDbl and c.hasSelection():
-                    new_text = '"' + c.selectedText() + '"'
+
+                def insert_around(left: str, right: str):
+                    selection_start = c.selectionStart()
+                    selection_end = c.selectionEnd()
+                    selected_text = c.selectedText()
                     c.removeSelectedText()
-                    c.insertText(new_text)
+                    c.insertText(left + selected_text + right)
+                    c.setPosition(selection_start + 1, QTextCursor.MoveMode.MoveAnchor)
+                    c.setPosition(selection_end + 1, QTextCursor.MoveMode.KeepAnchor)
                     self.setTextCursor(c)
-                    return
-                if key == QtCore.Qt.Key.Key_Apostrophe and c.hasSelection():
-                    new_text = "'" + c.selectedText() + "'"
-                    c.removeSelectedText()
-                    c.insertText(new_text)
-                    self.setTextCursor(c)
-                    return
-                if key == QtCore.Qt.Key.Key_ParenLeft and c.hasSelection():
-                    new_text = "(" + c.selectedText() + ")"
-                    c.removeSelectedText()
-                    c.insertText(new_text)
-                    self.setTextCursor(c)
-                    return
-                if key == QtCore.Qt.Key.Key_BracketLeft and c.hasSelection():
-                    new_text = "[" + c.selectedText() + "]"
-                    c.removeSelectedText()
-                    c.insertText(new_text)
-                    self.setTextCursor(c)
-                    return
-                if key == QtCore.Qt.Key.Key_BraceLeft and c.hasSelection():
-                    new_text = "{" + c.selectedText() + "}"
-                    c.removeSelectedText()
-                    c.insertText(new_text)
-                    self.setTextCursor(c)
-                    return
+
+                if c.hasSelection():
+                    match event.key():
+                        case QtCore.Qt.Key.Key_QuoteDbl:
+                            insert_around('"', '"')
+                            return
+                        case QtCore.Qt.Key.Key_Apostrophe:
+                            insert_around("'", "'")
+                            return
+                        case QtCore.Qt.Key.Key_ParenLeft:
+                            insert_around("(", ")")
+                            return
+                        case QtCore.Qt.Key.Key_BracketLeft:
+                            insert_around("[", "]")
+                            return
+                        case QtCore.Qt.Key.Key_BraceLeft:
+                            insert_around("{", "}")
+                            return
+                        case QtCore.Qt.Key.Key_QuoteLeft:
+                            insert_around("`", "`")
+                            return
 
                 super().keyPressEvent(event)
                 return
@@ -869,6 +874,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
             if self.actionTriggers["backspace"].match(event):
                 c = self.textCursor()
                 if c.hasSelection():
+                    self.__undo_queue.append(UndoOp(self.toPlainText(), self.textCursor().position()))
                     super().keyPressEvent(event)
                     return
                 self.__undo_queue.append(UndoOp(self.toPlainText(), c.position()))
@@ -1023,19 +1029,19 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                     op: UndoOp = self.__undo_queue.pop()
                     self.__redo_queue.append(UndoOp(self.toPlainText(), self.textCursor().position()))
                     self.clear()
-                    self.setPlainText(op.text)
+                    self.__setPlainText(op.text)
                     c = self.textCursor()
                     c.setPosition(op.cursor_position)
                     self.setTextCursor(c)
-                    return
+                return
 
             if self.actionTriggers["redo"].match(event):
                 with suppress(IndexError):
-                    self.__undo_queue.append(UndoOp(self.toPlainText(), self.textCursor().position()))
                     op: UndoOp = self.__redo_queue.pop()
+                    self.__undo_queue.append(UndoOp(self.toPlainText(), self.textCursor().position()))
                     self.__undo_queue.append(op)
                     self.clear()
-                    self.setPlainText(op.text)
+                    self.__setPlainText(op.text)
                     c = self.textCursor()
                     c.setPosition(op.cursor_position)
                     self.setTextCursor(c)
@@ -1043,6 +1049,9 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
             if event.text() != "":
                 self.__undo_queue.append(UndoOp(self.toPlainText(), self.textCursor().position()))
+
+        if event.key() == Qt.Key.Key_Delete and self.textCursor().hasSelection():
+            self.__undo_queue.append(UndoOp(self.toPlainText(), self.textCursor().position()))
 
         super().keyPressEvent(event)
 
@@ -1103,6 +1112,10 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
     @override
     def setPlainText(self, text: str, /) -> None:
+        self.__undo_queue.clear()
+        self.__setPlainText(text)
+
+    def __setPlainText(self, text: str, /) -> None:
         self.__highlight_done_once = False
         super().setPlainText(text)
         self.__rehighlight()
@@ -1139,7 +1152,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
             self.__current_line_background_color = QColor(
                 self.__highlightStyleDict["QPlainTextEdit_current_line_background_color"]
             )
-            self.setPlainText(self.toPlainText())
+            self.__setPlainText(self.toPlainText())
             cursor = self.textCursor()
             cursor.setPosition(saved_position)
             self.setTextCursor(cursor)
@@ -1156,7 +1169,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         """
         if self.__syntax_highlighting_enabled != enableSyntaxHighlighting:
             self.__syntax_highlighting_enabled = enableSyntaxHighlighting
-            self.setPlainText(self.toPlainText())
+            self.__setPlainText(self.toPlainText())
 
     def enableLineNumbers(self, enableLineNumbers: bool) -> None:
         """Enables or disables presence of line number column in the left edge of the editor."""

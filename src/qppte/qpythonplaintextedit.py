@@ -7,6 +7,7 @@ from threading import Lock
 from typing import Callable, NamedTuple, override
 
 from PySide6 import QtCore, QtGui
+from PySide6.QtCore import Signal
 from PySide6.QtGui import (
     QColor,
     QFont,
@@ -378,10 +379,11 @@ DEFAULT_LAST_USED_GOTO_LINE_TEXT = DefaultLastUsedGotoLineText()
 
 
 class QPythonPlainTextEdit(QPlainTextEdit):
-    # Emitted whenever the cursor enters a different line
-    # Currently handled by LineNumberPanel
-    # Note that the new line number (0‑based)
-    signalCursorMovedLine = QtCore.Signal(int)
+    signalCursorMovedLine = Signal(int)
+    """ 
+    Emitted whenever the cursor enters a different line. Currently handled 
+    by LineNumberPanel. Note that the newline number is 0‑based. 
+    """
 
     def __init__(
         self,
@@ -391,6 +393,8 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         syntaxHighlightStyles: dict[str, dict[str, TextCharFormat | str]] | None = None,
         actionTriggers: dict[str, ActionTrigger] | None = None,
         initial_goto_line_text: Callable[[str | None], str] = DEFAULT_LAST_USED_GOTO_LINE_TEXT,
+        readOnly: bool = False,
+        text: str = "",
     ):
         """
         QPythonPlainTextEdit constructor. Intended to be used for displaying or editing Python code in place
@@ -405,7 +409,8 @@ class QPythonPlainTextEdit(QPlainTextEdit):
                 If None (default), then `DEFAULT_ACTION_TRIGGERS` is used.
             initial_goto_line_text: Callback used to set and retrieve initial value in `GotoLineDialog`. Default
                 is a callback that sets and uses global shared value remembering last used entered text.
-
+            readOnly: editor is in readOnly mode or not. Default is False.
+            text: initial text in the editor.
         """
         super().__init__(parent)
         self.settings = settings
@@ -446,6 +451,8 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         self.__redo_queue = deque[UndoOp](maxlen=200)
 
         self.__initial_goto_line_text = initial_goto_line_text
+        self.setReadOnly(readOnly)
+        self.setPlainText(text)
 
         self.current_font_horizontal_advance = QFontMetrics(self.font()).horizontalAdvance("9")
         self.__lineNumberPanel = LineNumberPanel(self) if settings.enableLineNumbers else None

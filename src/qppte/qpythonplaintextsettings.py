@@ -20,8 +20,13 @@ from qppte.style import DEFAULT_STYLES_PROVIDER, TextCharFormat
 
 class QPythonPlainTextSettings(QWidget):
     settings_changed = Signal(Settings)
+    """ Called when `Ok` button is clicked and settings did change. """
+
     ok_called = Signal()
+    """ Called when `Ok` button is clicked. """
+
     cancel_called = Signal()
+    """ Called when `Cancel` button is clicked. """
 
     def __init__(
         self,
@@ -89,16 +94,18 @@ class QPythonPlainTextSettings(QWidget):
         font_row = mkRow(QLabel("Font Style:"), font_styles_selector, QLabel(" Size:"), font_size_selector)
         layout.addWidget(font_row)
 
-        sample_text_edit = QPythonPlainTextEdit(self)
-        sample_text_edit.setReadOnly(True)
-        sample_text_edit.setPlainText("""class A:
+        sample_text_edit = QPythonPlainTextEdit(
+            self,
+            readOnly=True,
+            settings=settings,
+            text="""class A:
     def __init__(self):
         self.x = 1 # initializing x to 1
     
     def __repr__(self, /) -> str:
         \"\"\" String representation of class A \"\"\"
-        return f"Instance of A({self.a})\"""")
-        sample_text_edit.setFont(QFont(settings.fontFamily, settings.fontSizePt))
+        return f"Instance of A({self.a})\"""",
+        )
         sample_text_edit.setMinimumHeight(10 * QFontMetrics(self.font()).height())
         sample_text_edit.setMinimumWidth(65 * QFontMetrics(self.font()).horizontalAdvance("9"))
         layout.addWidget(sample_text_edit)

@@ -23,8 +23,6 @@ class TextEditorWindow(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
 
         text_widget = QPythonPlainTextWidget()
-        text_widget.editor.setHighlightStyle("Light")
-        text_widget.editor.enableLineNumbers(True)
         search_action = QAction("Search", self)
         search_action.setShortcut(text_widget.editor.actionTriggers["search"].getQKeyCombination())
         search_action.triggered.connect(text_widget.editor.startSearch)
@@ -64,9 +62,7 @@ class A:
         menu_bar = QMenuBar()
 
         def open_file():
-            file_name, _ = QFileDialog.getOpenFileName(
-                self, caption="Import project from file", dir=str(Path.home()), filter="*.py"
-            )
+            file_name, _ = QFileDialog.getOpenFileName(self, caption="Open file", dir=str(Path.home()), filter="*.py")
             if file_name != "":
                 text_widget.editor.setPlainText(Path(file_name).read_text())
 

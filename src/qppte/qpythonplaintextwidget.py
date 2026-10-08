@@ -15,6 +15,7 @@ class QPythonPlainTextWidget(QWidget):
         """
         super().__init__(parent)
         self.editor = QPythonPlainTextEdit(self) if editor is None else editor
+        self.editor.setParent(self)
         self.setContentsMargins(0, 0, 0, 0)
         layout = QVBoxLayout()
         self.setLayout(layout)

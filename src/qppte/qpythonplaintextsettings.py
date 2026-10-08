@@ -98,6 +98,7 @@ class QPythonPlainTextSettings(QWidget):
             self,
             readOnly=True,
             settings=settings,
+            syntaxHighlightStyles=syntaxHighlightStyles(),
             text="""class A:
     def __init__(self):
         self.x = 1 # initializing x to 1
@@ -177,7 +178,14 @@ class QPythonPlainTextSettings(QWidget):
 
 
 class QPythonPlainTextSettingsDialog(QDialog):
-    def __init__(self, parent, /, settings: Settings, editor: QPythonPlainTextEdit | None = None):
+    def __init__(
+        self,
+        parent,
+        /,
+        settings: Settings,
+        editor: QPythonPlainTextEdit | None = None,
+        syntaxHighlightStyles: dict[str, dict[str, TextCharFormat | str]] | None = None,
+    ):
         """
         Standalone settings dialog widget to be used when you do not need any customization within you application.
 
@@ -185,13 +193,21 @@ class QPythonPlainTextSettingsDialog(QDialog):
             parent: parent QObject
             settings: linked settings object; it will be updated when user clicks Ok button.
             editor: optional linked editor. If not Null then when user clicks Ok, new settings are applied to it.
+            syntaxHighlightStyles: dict containing highlight rules for various highlight styles. If None (default),
+                then it is resolved to `qptte.style.DEFAULT_STYLES`.
         """
         super().__init__(parent)
         self.setWindowTitle("Editor Settings")
         self.setModal(True)
         layout = QVBoxLayout()
         self.setLayout(layout)
-        settings_panel = QPythonPlainTextSettings(self, settings)
+        settings_panel = QPythonPlainTextSettings(
+            self,
+            settings,
+            syntaxHighlightStyles=DEFAULT_STYLES_PROVIDER
+            if syntaxHighlightStyles is None
+            else (lambda: syntaxHighlightStyles),
+        )
         layout.addWidget(settings_panel)
         settings_panel.cancel_called.connect(self.close)
         settings_panel.ok_called.connect(self.close)

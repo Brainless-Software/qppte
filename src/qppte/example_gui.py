@@ -29,9 +29,8 @@ class TextEditorWindow(QMainWindow):
         self.addAction(search_action)
 
         root_panel = QWidget()
-        layout = QVBoxLayout()
-        root_panel.setLayout(layout)
-        layout.addWidget(text_widget)
+        root_panel.setLayout(QVBoxLayout())
+        root_panel.layout().addWidget(text_widget)
 
         self.setCentralWidget(root_panel)
 
@@ -71,7 +70,11 @@ class A:
         file_menu.addSeparator()
         file_menu.addAction(
             "&Settings",
-            lambda: QPythonPlainTextSettingsDialog(self, text_widget.editor.settings, text_widget.editor).exec(),
+            lambda: QPythonPlainTextSettingsDialog(
+                self,
+                text_widget.editor.settings,  # setting to display and chage
+                text_widget.editor,  # editor class to automatically apply new settings
+            ).exec(),
         )
         file_menu.addSeparator()
         file_menu.addAction("&Quit", self.close)

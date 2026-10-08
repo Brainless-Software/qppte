@@ -1,1 +1,1 @@
-# Extending editor classes
+# Extending editor

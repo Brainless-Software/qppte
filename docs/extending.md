@@ -14,10 +14,9 @@ from qppte import QPythonPlainTextEdit, QPythonPlainTextWidget
 class MyTextEditor(QPythonPlainTextEdit):
     @override
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        if self.isReadOnly():
-            super().keyPressEvent(event)
-        elif (
-            event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter)
+        if (
+            not self.isReadOnly()
+            and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter)
             and event.modifiers() == QtCore.Qt.KeyboardModifier.ShiftModifier
         ):
             # pressing Shift+Enter will insert new line without breaking current one

@@ -20,4 +20,5 @@ nav:
   - "Introduction": "index.md"
   - "Features": "features.md"
   - "Embedding": "embedding.md"
+  - "Adding Styles": "styles.md"
   - "Extending": "extending.md"

@@ -349,6 +349,47 @@
 
 
 <h1 id="embedding-code-editor-within-larger-application">Embedding code editor within larger application<a class="headerlink" href="#embedding-code-editor-within-larger-application" title="Permanent link">&para;</a></h1>
+<p>To embed code editor into your application you will typically use <code>QPythonPlainTextWidget</code>.
+This class extends <code>QWidget</code> and in its layout it has <code>QPythonPlainTextEdit</code> and right below 
+associated info panel. This panel displays current cursor line and number column and a search field
+when user presses <code>Ctrl-F</code>. Here is a simple example</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QMainWindow</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QVBoxLayout</span><span class="p">,</span><span class="n">QMenuBar</span><span class="p">,</span> <span class="n">QMenu</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QAction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qppte</span><span class="w"> </span><span class="kn">import</span> <span class="n">QPythonPlainTextWidget</span><span class="p">,</span> <span class="n">QPythonPlainTextSettingsDialog</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TextEditorWindow</span><span class="p">(</span><span class="n">QMainWindow</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">800</span><span class="p">,</span> <span class="mi">600</span><span class="p">)</span>
+
+        <span class="n">text_widget</span> <span class="o">=</span> <span class="n">QPythonPlainTextWidget</span><span class="p">()</span>
+        <span class="n">search_action</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="s2">"Search"</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># following triggers search even when editor widget does not have focus</span>
+        <span class="n">search_action</span><span class="o">.</span><span class="n">setShortcut</span><span class="p">(</span><span class="n">text_widget</span><span class="o">.</span><span class="n">editor</span><span class="o">.</span><span class="n">actionTriggers</span><span class="p">[</span><span class="s2">"search"</span><span class="p">]</span><span class="o">.</span><span class="n">getQKeyCombination</span><span class="p">())</span>
+        <span class="n">search_action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">text_widget</span><span class="o">.</span><span class="n">editor</span><span class="o">.</span><span class="n">startSearch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">search_action</span><span class="p">)</span>
+
+        <span class="n">root_panel</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+        <span class="n">root_panel</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">QVBoxLayout</span><span class="p">())</span>
+        <span class="n">root_panel</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">text_widget</span><span class="p">)</span>
+
+        <span class="c1"># setup File-&gt;Setting menu to open settings dialog</span>
+        <span class="n">menu_bar</span> <span class="o">=</span> <span class="n">QMenuBar</span><span class="p">()</span>
+        <span class="n">file_menu</span> <span class="o">=</span> <span class="n">QMenu</span><span class="p">(</span><span class="s2">"&amp;File"</span><span class="p">,</span> <span class="n">menu_bar</span><span class="p">)</span>
+        <span class="n">file_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span>
+            <span class="s2">"&amp;Settings"</span><span class="p">,</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="n">QPythonPlainTextSettingsDialog</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span> 
+                <span class="n">text_widget</span><span class="o">.</span><span class="n">editor</span><span class="o">.</span><span class="n">settings</span><span class="p">,</span> <span class="c1"># setting to display and chage </span>
+                <span class="n">text_widget</span><span class="o">.</span><span class="n">editor</span> <span class="c1"># editor class to automatically apply new settings</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">exec</span><span class="p">(),</span>
+        <span class="p">)</span>
+        <span class="n">menu_bar</span><span class="o">.</span><span class="n">addMenu</span><span class="p">(</span><span class="n">file_menu</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setCentralWidget</span><span class="p">(</span><span class="n">root_panel</span><span class="p">)</span>
+</code></pre></div>
 
 
 

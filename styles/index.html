@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="..">
-      
-      
-        <link rel="next" href="../embedding/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>Features - QPPTE</title>
+        <title>Adding new syntax highlighting styles - QPPTE</title>
       
     
     
@@ -72,7 +68,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#features" class="md-skip">
+        <a href="#adding-new-syntax-highlighting-styles" class="md-skip">
           Skip to content
         </a>
       
@@ -107,7 +103,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Features
+              Adding new syntax highlighting styles
             
           </span>
         </div>
@@ -226,37 +222,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Features
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../features/" class="md-nav__link">
         
   
   
@@ -272,48 +241,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#qpythonplaintextedit" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        QPythonPlainTextEdit
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#qpythonplaintextsettings" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        QPythonPlainTextSettings
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -392,36 +319,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#qpythonplaintextedit" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        QPythonPlainTextEdit
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#qpythonplaintextsettings" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        QPythonPlainTextSettings
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -437,52 +334,56 @@
 
 
 
-<h1 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h1>
-<p>This library provides several classes. </p>
-<ul>
-<li><a href="https://github.com/Brainless-Software/qppte/blob/6a1ef0f9498bc31c977c6d4bf53d7f2a4fe48017/src/qppte/qpythonplaintextedit.py#L381">QPythonPlainTextEdit</a> - actual code editor class. Extends <a href="https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QPlainTextEdit.html">QPlainTextEdit</a>.</li>
-<li><a href="https://github.com/Brainless-Software/qppte/blob/6a1ef0f9498bc31c977c6d4bf53d7f2a4fe48017/src/qppte/qpythonplaintextwidget.py#L6">QPythonPlainTextWidget</a> - QWidget container that holds editor class and bottom info panel. This is a primary class for embedding editor into your application.</li>
-<li><a href="https://github.com/Brainless-Software/qppte/blob/6a1ef0f9498bc31c977c6d4bf53d7f2a4fe48017/src/qppte/qpythonplaintextsettings.py#L21">QPythonPlainTextSettings</a> - QWidget panel that displays commonly modifiable editor settings.</li>
-<li><a href="https://github.com/Brainless-Software/qppte/blob/6a1ef0f9498bc31c977c6d4bf53d7f2a4fe48017/src/qppte/qpythonplaintextsettings.py#L179">QPythonPlainTextSettingsDialog</a> - Immediately usable settings dialog if you wish to use default settings widget.</li>
-</ul>
-<p>Below we outline features of the above classes .</p>
-<h3 id="qpythonplaintextedit">QPythonPlainTextEdit<a class="headerlink" href="#qpythonplaintextedit" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Python syntax highlighting</li>
-<li>Line numbers column</li>
-<li>Color schemes: <code>"Light"</code>, <code>"Light [Bold]"</code> and <code>"Warm Neon"</code></li>
-<li>Common code editor key combinations:</li>
-<li><code>Tab</code> - indent block</li>
-<li><code>Shift+Tab</code> - unindent block</li>
-<li><code>Ctrl+A</code> - select all</li>
-<li><code>Ctrl+X</code> - cut line or selected block and save it into clipboard</li>
-<li><code>Ctrl+C</code> - copy line or selected block into clipboard</li>
-<li><code>Ctrl+V</code> - paste text from clipboard</li>
-<li><code>Ctrl+Z</code> - undo</li>
-<li><code>Ctrl+R</code> - redo </li>
-<li><code>Ctrl+Y</code> - delete current line or all lines in a block</li>
-<li><code>Ctrl+G</code> - goto line and optionally column</li>
-<li><code>Ctrl+Shift+⬆</code> - move current line up </li>
-<li><code>Ctrl+Shift+⬇</code> - move current line down </li>
-<li><code>Ctrl+D</code> - duplicate current line</li>
-<li><code>Ctrl+/</code> - toggle commenting current line or a block  </li>
-<li><code>Ctrl+Shift+J</code> - join current and next line </li>
-<li><code>Ctrl+F</code> - search<ul>
-<li>Arrows <code>⬆</code> and <code>⬇</code> to go to previous and next matches.</li>
-<li><code>Alt+C</code> - to toggle case (in)sensitive search.</li>
-<li><code>Ctrl+Enter</code> - to close search and move focus to the editor</li>
-</ul>
-</li>
-</ul>
-<h3 id="qpythonplaintextsettings">QPythonPlainTextSettings<a class="headerlink" href="#qpythonplaintextsettings" title="Permanent link">&para;</a></h3>
-<p>These allow you to modify following settings.</p>
-<ul>
-<li>Color scheme</li>
-<li>If syntax highlighting is enabled or not</li>
-<li>Show line numbers column or not</li>
-<li>Number of spaces to be used instead of <code>Tab</code></li>
-<li>Fixed font family and size</li>
-</ul>
+<h1 id="adding-new-syntax-highlighting-styles">Adding new syntax highlighting styles<a class="headerlink" href="#adding-new-syntax-highlighting-styles" title="Permanent link">&para;</a></h1>
+<p>By default, syntax highlit colors and font rules are held in <a href="https://github.com/Brainless-Software/qppte/blob/6a1ef0f9498bc31c977c6d4bf53d7f2a4fe48017/src/qppte/style.py#L23">DEFAULT_STYLES</a>
+variable. You can add new style directly to this variable or make a copy of it, add new style to the copy 
+and pass it around when instantiating editor and settings classes. Below we add new style <code>"Paper"</code> with changed 
+background color and color of some other elements.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">qppte</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DEFAULT_STYLES</span><span class="p">,</span> <span class="n">TextCharFormat</span><span class="p">,</span> <span class="n">QPythonPlainTextEdit</span><span class="p">,</span> 
+    <span class="n">QPythonPlainTextWidget</span><span class="p">,</span> <span class="n">QPythonPlainTextSettingsDialog</span>
+<span class="p">)</span>
+
+<span class="n">styles</span> <span class="o">=</span> <span class="n">DEFAULT_STYLES</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="n">styles</span><span class="p">[</span><span class="s2">"Paper"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># text formats for various python syntax elements</span>
+    <span class="s2">"function_definition"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(</span><span class="n">foreground_color</span><span class="o">=</span><span class="s2">"#00627A"</span><span class="p">),</span>
+    <span class="s2">"special_function"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(</span><span class="n">foreground_color</span><span class="o">=</span><span class="s2">"#B200B2"</span><span class="p">),</span>
+    <span class="s2">"keyword"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(</span><span class="n">foreground_color</span><span class="o">=</span><span class="s2">"#0033B3"</span><span class="p">),</span>
+    <span class="s2">"decorator"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(</span><span class="n">foreground_color</span><span class="o">=</span><span class="s2">"#9E880D"</span><span class="p">),</span>
+    <span class="s2">"keyword_argument"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(</span><span class="n">foreground_color</span><span class="o">=</span><span class="s2">"#660099"</span><span class="p">),</span>
+    <span class="s2">"line_comment"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(</span><span class="n">foreground_color</span><span class="o">=</span><span class="s2">"#5C5C5C"</span><span class="p">,</span> <span class="n">italic</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="s2">"number"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(</span><span class="n">foreground_color</span><span class="o">=</span><span class="s2">"#1750EB"</span><span class="p">),</span>
+    <span class="s2">"function_call"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(),</span>
+    <span class="s2">"string"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(</span><span class="n">foreground_color</span><span class="o">=</span><span class="s2">"#067D17"</span><span class="p">),</span>
+    <span class="s2">"docstring"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(</span><span class="n">foreground_color</span><span class="o">=</span><span class="s2">"#5C5C5C"</span><span class="p">,</span> <span class="n">italic</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+    <span class="s2">"self"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(</span><span class="n">foreground_color</span><span class="o">=</span><span class="s2">"#94558D"</span><span class="p">),</span>
+    <span class="s2">"type"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(</span><span class="n">foreground_color</span><span class="o">=</span><span class="s2">"#660099"</span><span class="p">),</span>
+    <span class="s2">"class_definition_name"</span><span class="p">:</span> <span class="n">TextCharFormat</span><span class="p">(</span><span class="n">weight</span><span class="o">=</span><span class="n">QFont</span><span class="o">.</span><span class="n">Weight</span><span class="o">.</span><span class="n">Bold</span><span class="p">),</span>
+
+    <span class="c1"># colors to be applied to the common elements of the editor</span>
+    <span class="c1"># not python syntax specific</span>
+    <span class="s2">"QPlainTextEdit_default_foreground_color"</span><span class="p">:</span> <span class="s2">"#000000"</span><span class="p">,</span>
+    <span class="s2">"QPlainTextEdit_background_color"</span><span class="p">:</span> <span class="s2">"#fff3e5"</span><span class="p">,</span>
+    <span class="s2">"QPlainTextEdit_line_number_color"</span><span class="p">:</span> <span class="s2">"#999999"</span><span class="p">,</span>
+    <span class="s2">"QPlainTextEdit_current_line_background_color"</span><span class="p">:</span> <span class="s2">"#f5f8fe"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">text_widget</span> <span class="o">=</span> <span class="n">QPythonPlainTextWidget</span><span class="p">(</span><span class="n">editor</span> <span class="o">=</span> <span class="n">QPythonPlainTextEdit</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">syntaxHighlightStyles</span><span class="o">=</span><span class="n">styles</span><span class="p">))</span>
+
+<span class="n">file_menu</span> <span class="o">=</span> <span class="n">QMenu</span><span class="p">(</span><span class="s2">"&amp;File"</span><span class="p">,</span> <span class="n">menu_bar</span><span class="p">)</span>
+<span class="n">file_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="s2">"&amp;Open"</span><span class="p">,</span> <span class="n">open_file</span><span class="p">)</span>
+<span class="n">file_menu</span><span class="o">.</span><span class="n">addSeparator</span><span class="p">()</span>
+<span class="n">file_menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span>
+    <span class="s2">"&amp;Settings"</span><span class="p">,</span>
+    <span class="k">lambda</span><span class="p">:</span> <span class="n">QPythonPlainTextSettingsDialog</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">text_widget</span><span class="o">.</span><span class="n">editor</span><span class="o">.</span><span class="n">settings</span><span class="p">,</span>  <span class="c1"># setting to display and chage</span>
+        <span class="n">text_widget</span><span class="o">.</span><span class="n">editor</span><span class="p">,</span>  <span class="c1"># editor class to which automatically apply new settings</span>
+        <span class="n">syntaxHighlightStyles</span><span class="o">=</span><span class="n">styles</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">exec</span><span class="p">(),</span>
+<span class="p">)</span>
+</code></pre></div>
 
 
 

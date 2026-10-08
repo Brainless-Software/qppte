@@ -209,6 +209,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="." class="md-nav__link md-nav__link--active">
         
   
@@ -225,6 +243,36 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Links
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -331,6 +379,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Links
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -347,7 +414,7 @@
 
 
 <h1 id="qppte-qpythonplaintextedit">QPPTE - QPythonPlainTextEdit<a class="headerlink" href="#qppte-qpythonplaintextedit" title="Permanent link">&para;</a></h1>
-<p>A poor-main embeddable code editor for python. Written in Python with <a href="https://pypi.org/project/PySide6/">PySide6</a>
+<p>An embeddable code editor for Python. Written in Python with <a href="https://pypi.org/project/PySide6/">PySide6</a>
 it is created with intent to be used within larger applications where code editor is required. For example 
 if you application supports plugins in Python and you want to give users ability to create and edit such plugins 
 directly within the application, then you can make this library a dependency in your project and embed this editor.</p>
@@ -356,11 +423,18 @@ the keystrokes can be customized by the user.</p>
 <p>To add this library to your project do</p>
 <div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span>qppte
 </code></pre></div>
-<p>This library includes a small demo application <a href="https://github.com/Brainless-Software/qppte/blob/master/src/qppte/example_gui.py">qppte_demo</a>
+<p>This library includes a small demo application qppte_demo (<a href="https://github.com/Brainless-Software/qppte/blob/master/src/qppte/example_gui.py">example_gui.py</a>)
 which you can use to try this editor. To run it do</p>
 <div class="highlight"><pre><span></span><code>uv<span class="w"> </span>tool<span class="w"> </span>run<span class="w"> </span>--from<span class="w"> </span>qppte<span class="w"> </span>qppte_demo
 </code></pre></div>
 <p>You can use the source for it as example of embedding this code editor within you application.</p>
+<p>Source code for <em>qppte</em> is available <a href="https://github.com/Brainless-Software/qppte">here</a>. </p>
+<h3 id="links">Links<a class="headerlink" href="#links" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://pypi.org/project/PySide6/">PySide6</a></li>
+<li><a href="https://github.com/tree-sitter/py-tree-sitter">tree-sitter</a></li>
+<li><a href="https://github.com/Brainless-Software/qppte/blob/master/src/qppte/example_gui.py">example_gui.py</a> - source for qppte_demo application.</li>
+</ul>
 
 
 

@@ -22,4 +22,4 @@ which you can use to try this editor. To run it do
 uv tool run --from qppte qppte_demo
 ```
 
-More information is available [here]()
+More information is available [here](https://brainless-software.github.io/qppte/)

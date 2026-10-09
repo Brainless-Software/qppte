@@ -1,6 +1,10 @@
 QPPTE - QPythonPlainTextEdit
 ============================
 
+[plugin-version-svg]: https://img.shields.io/pypi/v/qppte.svg
+[![PyPI Latest Release](https://img.shields.io/pypi/v/qppte.svg)](https://pypi.org/project/qppte/)
+[![License - MIT](https://img.shields.io/pypi/l/qppte.svg)](https://github.com/pandas-dev/qppte/blob/main/LICENSE)
+
 An embeddable code editor for Python. Written in Python with [PySide6](https://pypi.org/project/PySide6/)
 it is created with intent to be used within larger applications where code editor is required. For example 
 if you application supports plugins in Python and you want to give users ability to create and edit such plugins 

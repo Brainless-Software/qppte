@@ -3,7 +3,6 @@ from collections import deque
 from collections.abc import Sequence
 from contextlib import suppress
 from dataclasses import dataclass
-from threading import Lock
 from typing import Callable, NamedTuple, override
 
 from PySide6 import QtCore, QtGui
@@ -425,6 +424,7 @@ class QPythonPlainTextEdit(QPlainTextEdit):
 
         self.__tab_width_num_spaces = settings.tabWidthSpaces
         self.__tab_spaces = " " * self.__tab_width_num_spaces
+        self.__syntax_query_cursor = QueryCursor(HIGHLIGHTER_QUERY)
 
         self.actionTriggers = DEFAULT_ACTION_TRIGGERS if actionTriggers is None else actionTriggers
 
@@ -444,14 +444,12 @@ class QPythonPlainTextEdit(QPlainTextEdit):
             self.__highlightStyleDict["QPlainTextEdit_current_line_background_color"]
         )
 
-        self.__lock = Lock()
-        self.__highlight_done_once = False
-        self.__signal_connected = False
-        self.__undo_queue = deque[UndoOp](maxlen=200)
-        self.__redo_queue = deque[UndoOp](maxlen=200)
+        self.__undo_queue = deque[UndoOp](maxlen=500)
+        self.__redo_queue = deque[UndoOp](maxlen=500)
 
         self.__initial_goto_line_text = initial_goto_line_text
         self.setReadOnly(readOnly)
+        self.textChanged.connect(self.__highlight)
         self.__setPlainText(text)
 
         self.current_font_horizontal_advance = QFontMetrics(self.font()).horizontalAdvance("9")
@@ -1059,72 +1057,47 @@ class QPythonPlainTextEdit(QPlainTextEdit):
         if not self.__syntax_highlighting_enabled:
             return
 
+        self.blockSignals(True)
         cursor: QTextCursor = self.textCursor()
-
-        text = self.toPlainText()
-        lines = text.splitlines()
-
-        input_text = text.encode()
-        tree = PYTHON_PARSER.parse(input_text)
-        query_cursor = QueryCursor(HIGHLIGHTER_QUERY)
-
-        matches: list[tuple[int, dict[str, list[Node]]]] = query_cursor.matches(tree.root_node)
-        matches.sort(key=lambda m: m[0])
-        for _, m in matches:
-            for capture_name, nodes in m.items():
-                for node in nodes:
-                    cursor.setPosition(
-                        sum([len(line) for line in lines[0 : node.start_point.row]])
-                        + node.start_point.column
-                        + node.start_point.row
-                    )
-                    cursor.setPosition(
-                        sum([len(line1) for line1 in lines[0 : node.end_point.row]])
-                        + node.end_point.column
-                        + node.end_point.row,
-                        QTextCursor.MoveMode.KeepAnchor,
-                    )
-                    cursor.setCharFormat(self.__highlightStyleDict[capture_name])
-
-        self.__highlight_done_once = True
-
-    def __rehighlight(self):
-        with self.__lock:
-            if self.__working:
-                return
-            else:
-                self.__working = True
-
+        cursor.beginEditBlock()
         try:
-            if self.isReadOnly() and self.__highlight_done_once:
-                return
-
             # clear all formatting first
-            cursor: QTextCursor = self.textCursor()
             cursor.setPosition(0)
             cursor.movePosition(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.KeepAnchor)
             cursor.setCharFormat(QTextCharFormat())
 
-            self.__highlight()
-            self.__highlight_done_once = True
+            text = self.toPlainText()
+            input_text = text.encode()
+            tree = PYTHON_PARSER.parse(input_text)
+            matches: list[tuple[int, dict[str, list[Node]]]] = self.__syntax_query_cursor.matches(tree.root_node)
+            matches.sort(key=lambda m: m[0])
+            doc = self.document()
+            for _, m in matches:
+                for capture_name, nodes in m.items():
+                    for node in nodes:
+                        cursor.setPosition(
+                            doc.findBlockByNumber(node.start_point.row).position() + node.start_point.column
+                        )
+                        cursor.setPosition(
+                            doc.findBlockByNumber(node.end_point.row).position() + node.end_point.column,
+                            QTextCursor.MoveMode.KeepAnchor,
+                        )
+                        cursor.setCharFormat(self.__highlightStyleDict[capture_name])
         finally:
-            self.__working = False
+            cursor.endEditBlock()
+            self.blockSignals(False)
 
     @override
     def setPlainText(self, text: str, /) -> None:
         self.__undo_queue.clear()
-        self.__setPlainText(text)
+        self.__redo_queue.clear()
+        super().setPlainText(text)
 
     def __setPlainText(self, text: str, /) -> None:
-        self.__highlight_done_once = False
         super().setPlainText(text)
-        self.__rehighlight()
-        if not self.__signal_connected:
-            self.textChanged.connect(self.__rehighlight)
-            self.__signal_connected = True
 
     def startSearch(self):
-        """Programmatically trigger appearing search field into the info panel."""
+        """Programmatically trigger appearing search field in the info panel."""
         if self.__info_panel is not None:
             self.__info_panel.search_field_panel.resetSearchOffsets(self.textCursor().position())
             self.__info_panel.search_field_panel.setVisible(True)

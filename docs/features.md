@@ -2,15 +2,15 @@
 
 This library provides several classes.
 
-* [QPythonPlainTextEdit](https://github.com/Brainless-Software/qppte/blob/f0d422816ee2cc5aed63e6e15722e6bbdd6f2006/src/qppte/qpythonplaintextedit.py#L381) -
+* [QPythonPlainTextEdit](https://github.com/Brainless-Software/qppte/blob/d18d65b4e8f5c1a3932472deb2a2702fe3e38b93/src/qppte/qpythonplaintextedit.py#L380) -
   actual code editor class.
   Extends [QPlainTextEdit](https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QPlainTextEdit.html).
-* [QPythonPlainTextWidget](https://github.com/Brainless-Software/qppte/blob/f0d422816ee2cc5aed63e6e15722e6bbdd6f2006/src/qppte/qpythonplaintextwidget.py#L6) -
+* [QPythonPlainTextWidget](https://github.com/Brainless-Software/qppte/blob/d18d65b4e8f5c1a3932472deb2a2702fe3e38b93/src/qppte/qpythonplaintextwidget.py#L6) -
   QWidget container that holds editor class and bottom info panel. This is a primary class for embedding editor into
   your application.
-* [QPythonPlainTextSettings](https://github.com/Brainless-Software/qppte/blob/f0d422816ee2cc5aed63e6e15722e6bbdd6f2006/src/qppte/qpythonplaintextsettings.py#L21) -
+* [QPythonPlainTextSettings](https://github.com/Brainless-Software/qppte/blob/d18d65b4e8f5c1a3932472deb2a2702fe3e38b93/src/qppte/qpythonplaintextsettings.py#L21) -
   QWidget panel that displays commonly modifiable editor settings.
-* [QPythonPlainTextSettingsDialog](https://github.com/Brainless-Software/qppte/blob/f0d422816ee2cc5aed63e6e15722e6bbdd6f2006/src/qppte/qpythonplaintextsettings.py#L180) -
+* [QPythonPlainTextSettingsDialog](https://github.com/Brainless-Software/qppte/blob/d18d65b4e8f5c1a3932472deb2a2702fe3e38b93/src/qppte/qpythonplaintextsettings.py#L180) -
   Immediately usable settings dialog if you wish to use default settings widget.
 
 Below we outline features of the above classes .

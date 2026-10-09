@@ -1,6 +1,6 @@
 # Adding new syntax highlighting styles
 
-By default, syntax highlit colors and font rules are held in [DEFAULT_STYLES](https://github.com/Brainless-Software/qppte/blob/6a1ef0f9498bc31c977c6d4bf53d7f2a4fe48017/src/qppte/style.py#L23)
+By default, syntax highlit colors and font rules are held in [DEFAULT_STYLES](https://github.com/Brainless-Software/qppte/blob/d18d65b4e8f5c1a3932472deb2a2702fe3e38b93/src/qppte/style.py#L23)
 variable. You can add new style directly to this variable or make a copy of it, add new style to the copy 
 and pass it around when instantiating editor and settings classes. Below we add new style `"Paper"` with changed 
 background color and color of some other elements.

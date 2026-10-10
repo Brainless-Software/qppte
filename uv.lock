@@ -552,6 +552,7 @@ wheels = [
 
 [[package]]
 name = "qppte"
+version = "0.7.2"
 source = { editable = "." }
 dependencies = [
     { name = "pyside6" },

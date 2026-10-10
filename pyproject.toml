@@ -1,6 +1,6 @@
 [project]
 name = "qppte"
-dynamic = ["version"]
+version="0.7.2"
 description = "Embeddable QPlainTextEdit with Python syntax highlighting"
 readme = "README.md"
 authors = [

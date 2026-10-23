@@ -1,7 +1,6 @@
 QPPTE - QPythonPlainTextEdit
 ============================
 
-[plugin-version-svg]: https://img.shields.io/pypi/v/qppte.svg
 [![License - MIT](https://img.shields.io/badge/License-MIT-blue)](https://github.com/pandas-dev/qppte/blob/main/LICENSE)
 [![PyPI Latest Release](https://img.shields.io/pypi/v/qppte.svg)](https://pypi.org/project/qppte/)
 [![Documentation](https://img.shields.io/badge/docs-latest-brightgreen)](https://brainless-software.github.io/qppte/)
